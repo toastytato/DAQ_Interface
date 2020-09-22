@@ -1,16 +1,24 @@
-# This is a sample Python script.
+import view
+import model
+import tkinter as tk
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+REFRESH_RATE = 2    # number of refreshes per second
+REFRESH_PERIOD = (1000/REFRESH_RATE)
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+root = tk.Tk()
+root.title("DAQ Control Interface")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+channel_views = list()
+num_channels = 3
+
+# create the 3 output channels
+for i in range(0, num_channels):
+    channel_views.append(view.ChannelView(root, channel=i))
+    channel_views[i].pack()
+
+root.mainloop()
+
+
+def refresh():
+    pass
