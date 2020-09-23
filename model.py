@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 #       connect to NI instruments
 
 MAX_VALUES = 30     # num of datapoints in view
-TIME_WINDOW = 3     # viewing frame time in seconds
+TIME_WINDOW = 2     # viewing frame time in seconds
 
 def out_voltage():
     with nidaqmx.Task() as task:
@@ -23,16 +23,23 @@ class ChannelData:
         self.voltage_set = 0
 
         self.time_init = time.time()
-        self.times = [time.time() - self.time_init]  # time counter
-        self.setpoints = [self.voltage_set]   # setpoint values
         self.inputs = [float()]   # values from input
+        self.input_times = [time.time() - self.time_init]  # time counter
+        self.setpoints = [float()]   # setpoint values
+        self.setpoint_times = [time.time() - self.time_init]
 
-    def update_values(self, data_in=0):
-        self.times.append(time.time() - self.time_init)
-        self.inputs.append(2*math.sin(3*data_in*self.times[-1])+3)
-        self.setpoints.append(self.voltage_set)
-
-        if (self.times[-1] - self.times[0]) >= TIME_WINDOW:
-            self.times.pop(0)
+    def update_inputs(self, sensor_val):
+        self.input_times.append(time.time() - self.time_init)
+        self.inputs.append(math.sin(self.input_times[-1]-sensor_val) + 3)
+        # print(self.inputs)
+        if (self.input_times[-1] - self.input_times[0]) >= TIME_WINDOW:
+            self.input_times.pop(0)
             self.inputs.pop(0)
+
+    def update_setpoints(self, setpoint):
+        self.setpoint_times.append(time.time() - self.time_init)
+        self.setpoints.append(setpoint)
+
+        if (self.setpoint_times[-1] - self.setpoint_times[0]) >= TIME_WINDOW:
+            self.setpoint_times.pop(0)
             self.setpoints.pop(0)
