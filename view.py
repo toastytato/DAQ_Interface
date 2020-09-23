@@ -1,5 +1,6 @@
 import tkinter as tk
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # GUI elements
@@ -36,26 +37,33 @@ class GraphView(tk.Frame):
         self.text = tk.Label(self, text="Graph")
         self.text.pack()
 
-        self.fig = plt.Figure(figsize=(10, 2))
+        self.fig = plt.Figure(figsize=(9, 2))
         self.title = "Voltage"
+        self.needs_animate = True
 
         self.axes = self.fig.add_subplot(111)
-        self.axes.set_title("hi")
-        self.graph = FigureCanvasTkAgg(self.fig, master=self)
 
-        self.fig.tight_layout()
-        self.graph.get_tk_widget().pack()
+        # self.axes.set_title("hi")
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH)
 
     def animate(self, t, y, z):
+        # if self.needs_animate:
+
         self.axes.clear()
-        # self.axes.set_title('{} vs Time'.format(self.title))
         self.axes.set_ylabel(self.title)
         self.axes.set_xlabel('Time')
         self.axes.set_ylim([0, 6])
         self.axes.plot(t, y,
                        t, z)
+        self.axes.xaxis.set_major_formatter(plt.NullFormatter())
         self.fig.tight_layout()
-        self.graph.draw()
+        self.canvas.draw()
+
+        # if all(val == y[-1] for val in y) and all(val == z[-1] for val in z) and (t[-1] - t[0]) >= 2:
+        #     self.needs_animate = False
+        # else:
+        #     self.needs_animate = True
 
 
 class ControlsView(tk.Frame):

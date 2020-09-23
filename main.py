@@ -1,11 +1,13 @@
 import view
 import model
 import tkinter as tk
-import threading
 
-REFRESH_RATE = 10    # number of refreshes per second
+NUM_CHANNELS = 2    # number of output channels
+
+REFRESH_RATE = 12    # number of refreshes per second
 REFRESH_PERIOD = int(1000/REFRESH_RATE)     # refresh period in ms
-NUM_CHANNELS = 3    # number of output channels
+POLLING_RATE = 30
+POLLING_PERIOD = int(1000/POLLING_RATE)
 
 channel_views = list()
 channel_data = list()
@@ -21,23 +23,28 @@ def thread_function(t, y, z):
 
 # periodic function for animations/live feedback
 
-def refresh():
-    threads = []
+def refresh_graph():
+    for i in range(NUM_CHANNELS):
+        # t, y, z are lists of values to plot
+        t = channel_data[i].times
+        y = channel_data[i].setpoints
+        z = channel_data[i].inputs
+        channel_views[i].graph_view.animate(t, y, z)
+    root.after(REFRESH_PERIOD, refresh_graph)
+
+def refresh_data():
     for i in range(NUM_CHANNELS):
         if active_channel != -1 and active_channel < NUM_CHANNELS:  # active_channel is not the debug
             voltage = channel_views[active_channel].controls_view.voltage_slider.get()
             channel_data[active_channel].voltage_set = voltage
         # get input from debug menu
         # TODO: get it from NI device later
+
         in_data = debug_view.input_sliders[i].get()
         channel_data[i].update_values(in_data)
-        # t, y, z are lists of values to plot
-        t = channel_data[i].times
-        y = channel_data[i].setpoints
-        z = channel_data[i].inputs
-        channel_views[i].graph_view.animate(t, y, z)
+    root.after(POLLING_PERIOD, refresh_data)
 
-    root.after(REFRESH_PERIOD, refresh)
+
 
 # on event functions
 
@@ -83,5 +90,6 @@ if __name__ == '__main__':
 
     debug_view.pack(side=tk.BOTTOM)
 
-    refresh()
+    refresh_data()
+    refresh_graph()
     root.mainloop()

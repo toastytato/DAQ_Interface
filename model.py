@@ -1,12 +1,14 @@
 import nidaqmx
+import time
+import math
 import matplotlib.pyplot as plt
 
 
 # TODO: get values function
 #       connect to NI instruments
 
-MAX_VALUES = 30
-
+MAX_VALUES = 30     # num of datapoints in view
+TIME_WINDOW = 3     # viewing frame time in seconds
 
 def out_voltage():
     with nidaqmx.Task() as task:
@@ -19,16 +21,18 @@ class ChannelData:
     def __init__(self, period):
         self.t_interval = period/1000
         self.voltage_set = 0
-        self.times = [0]   # time counter
+
+        self.time_init = time.time()
+        self.times = [time.time() - self.time_init]  # time counter
         self.setpoints = [self.voltage_set]   # setpoint values
-        self.inputs = [0]   # values from input
+        self.inputs = [float()]   # values from input
 
-    def update_values(self, input=0):
-        self.inputs.append(input)
+    def update_values(self, data_in=0):
+        self.times.append(time.time() - self.time_init)
+        self.inputs.append(2*math.sin(3*data_in*self.times[-1])+3)
         self.setpoints.append(self.voltage_set)
-        self.times.append(self.times[-1] + self.t_interval)
 
-        if len(self.times) > MAX_VALUES:
+        if (self.times[-1] - self.times[0]) >= TIME_WINDOW:
             self.times.pop(0)
             self.inputs.pop(0)
             self.setpoints.pop(0)
