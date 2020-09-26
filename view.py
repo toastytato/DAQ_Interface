@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.ticker as tick
 
@@ -66,7 +65,7 @@ class DataView(tk.Frame):
     def update_val(self, v_out, v_in, current):
         self.vout_text.set("V_out: " + "{:.2f}".format(v_out) + " V")
         self.vin_text.set("V_in: " + "{:.2f}".format(v_in) + " V")
-        self.iin_text.set("I_in: " + "{:.2f}".format(current) + " A")
+        self.iin_text.set("I_in: " + "{:.2f}".format(current) + " mA")
 
 
 class BigGraphView(tk.Frame):
@@ -163,9 +162,9 @@ class ControlsView(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         self.text = tk.Label(self, text="Voltage Out:")
-        self.voltage_slider = tk.Scale(self,
-                                       from_=0, to=5.0, resolution=0.01,
-                                       orient='horizontal', showvalue=0)
+        self.voltage_slider = ttk.Scale(self,
+                                        from_=0, to=5.0, # resolution=0.01,
+                                        orient='horizontal') #, showvalue=0)
         self.voltage_entry = tk.Entry(self, width=5)
         self.voltage_entry.insert(0, self.voltage_slider.get())
 
@@ -177,7 +176,7 @@ class ControlsView(tk.Frame):
 
     def refresh_entry(self):
         self.voltage_entry.delete(0, tk.END)
-        self.voltage_entry.insert(0, self.voltage_slider.get())
+        self.voltage_entry.insert(0, "{:.2f}".format(self.voltage_slider.get()))
 
 
 class DebugMenuView(tk.LabelFrame):

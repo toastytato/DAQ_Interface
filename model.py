@@ -2,7 +2,6 @@ from constants import *
 import nidaqmx
 import time
 import math
-import matplotlib.pyplot as plt
 
 
 def analog_out(channel, voltage):
