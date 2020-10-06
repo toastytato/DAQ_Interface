@@ -3,25 +3,26 @@ import nidaqmx
 import time
 import math
 
-prefix = "Dev1/ao"
+out_prefix = "Dev1"
+in_prefix = "Dev2"
 
 def set_prefix(pre):
-    global prefix
-    prefix = pre
-    print(prefix)
+    global out_prefix
+    out_prefix = pre
 
 def analog_out(channel, voltage):
     # CHANGE PATH: adjust the path name as needed
     # 'Dev1' is the name of the device connected to the computer
     # You can find this name in NI-MAX
-    path = prefix + str(channel)
+    path = out_prefix + "/ao" + str(channel)
+    print(path)
     with nidaqmx.Task() as task:
         task.ao_channels.add_ao_voltage_chan(path)   # voltage channel 1
         print(task.write(voltage))
 
 def analog_in(channel):
     # Same as above, change as needed
-    path = "Dev2/ai" + str(channel)
+    path = in_prefix + "/ai" + str(channel)
     with nidaqmx.Task() as task:
         task.ai_channels.add_ai_voltage_chan(path)
         input = task.read()

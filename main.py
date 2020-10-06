@@ -81,7 +81,7 @@ def value_enter(event, channel, widget):
     print('entered')
 
 def usb_enter(event):
-    name = debug_view.usb_input.get()
+    name = debug_view.usb_entry1.get()
     model.set_prefix(name)
 
 
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     root.title("DAQ Control Interface")
 
     debug_view = view.DebugMenuView(root, NUM_CHANNELS)
-    debug_view.usb_input.bind('<Return>', usb_enter)
+    debug_view.usb_entry1.bind('<Return>', usb_enter)
     debug_view.toggle_btn.bind('<Button-1>', debug_mode_toggle)
     graph_notebook = view.AllGraphNotebook(root, NUM_CHANNELS)
     graph_notebook.notebook.bind('<Button-1>', on_notebook_select)
