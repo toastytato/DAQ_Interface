@@ -1,3 +1,4 @@
+import sys
 import view
 import model
 from constants import *
@@ -79,6 +80,10 @@ def value_enter(event, channel, widget):
     channel_views[channel].controls_view.voltage_slider.set(value)
     print('entered')
 
+def usb_enter(event):
+    name = debug_view.usb_input.get()
+    model.set_prefix(name)
+
 
 def on_notebook_select(event):
     nb = graph_notebook.notebook
@@ -109,6 +114,7 @@ if __name__ == '__main__':
     root.title("DAQ Control Interface")
 
     debug_view = view.DebugMenuView(root, NUM_CHANNELS)
+    debug_view.usb_input.bind('<Return>', usb_enter)
     debug_view.toggle_btn.bind('<Button-1>', debug_mode_toggle)
     graph_notebook = view.AllGraphNotebook(root, NUM_CHANNELS)
     graph_notebook.notebook.bind('<Button-1>', on_notebook_select)
@@ -137,5 +143,5 @@ if __name__ == '__main__':
 
     refresh_sensor_input()
     refresh_interface()
-    root.protocol("WM_DELETE_WINDOW", quit)
+    root.protocol("WM_DELETE_WINDOW", sys.exit)
     root.mainloop()

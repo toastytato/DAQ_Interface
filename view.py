@@ -189,7 +189,12 @@ class DebugMenuView(tk.LabelFrame):
         self.toggle_text.set("Debug")
         self.toggle_btn = tk.Button(self, textvariable=self.toggle_text)
 
+        self.usb_label = tk.Label(self, text="USB Device Name:")
+        self.usb_input = tk.Entry(self, width=10)
+
         [slider.pack() for slider in self.input_sliders]
+        self.usb_label.pack()
+        self.usb_input.pack()
         self.toggle_btn.pack()
 
 
