@@ -176,7 +176,7 @@ class ControlsView(tk.Frame):
         self.voltage_entry = tk.Entry(self, width=5)
         self.voltage_entry.insert(0, self.voltage_slider.get())
 
-        self.mode_options.grid(row=0, column=1)
+        # self.mode_options.grid(row=0, column=1)
         self.text.grid(row=1, column=0) # , sticky=tk.E) # , pady=(15, 0))
         self.voltage_entry.grid(row=1, column=1, sticky=tk.W)
         self.voltage_slider.grid(row=1, column=2, sticky=tk.EW)

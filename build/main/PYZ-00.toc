@@ -656,6 +656,26 @@
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\__init__.py',
    'PYMODULE'),
+  ('pkg_resources._vendor.packaging.requirements',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\requirements.py',
+   'PYMODULE'),
+  ('pkg_resources._vendor.packaging.markers',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\markers.py',
+   'PYMODULE'),
+  ('pkg_resources._vendor.packaging._structures',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\_structures.py',
+   'PYMODULE'),
+  ('pkg_resources._vendor.packaging._compat',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\_compat.py',
+   'PYMODULE'),
+  ('pkg_resources._vendor.packaging.utils',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\utils.py',
+   'PYMODULE'),
   ('pkg_resources._vendor.pyparsing',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\pyparsing.py',
@@ -688,6 +708,10 @@
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\ctypes\\macholib\\framework.py',
    'PYMODULE'),
+  ('pkg_resources._vendor.six',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\six.py',
+   'PYMODULE'),
   ('pkg_resources._vendor.packaging.specifiers',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\specifiers.py',
@@ -696,45 +720,21 @@
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\version.py',
    'PYMODULE'),
-  ('pkg_resources._vendor.packaging.utils',
+  ('pkg_resources._vendor',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\utils.py',
-   'PYMODULE'),
-  ('pkg_resources._vendor.packaging._compat',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\_compat.py',
-   'PYMODULE'),
-  ('pkg_resources._vendor.appdirs',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\appdirs.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\__init__.py',
    'PYMODULE'),
   ('pkg_resources._vendor.packaging',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\__init__.py',
    'PYMODULE'),
-  ('pkg_resources._vendor.packaging.requirements',
+  ('pkg_resources._vendor.appdirs',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\requirements.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\appdirs.py',
    'PYMODULE'),
   ('pkg_resources._vendor.packaging.__about__',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\__about__.py',
-   'PYMODULE'),
-  ('pkg_resources._vendor.six',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\six.py',
-   'PYMODULE'),
-  ('pkg_resources._vendor.packaging._structures',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\_structures.py',
-   'PYMODULE'),
-  ('pkg_resources._vendor',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\__init__.py',
-   'PYMODULE'),
-  ('pkg_resources._vendor.packaging.markers',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\pkg_resources\\_vendor\\packaging\\markers.py',
    'PYMODULE'),
   ('sysconfig',
    'c:\\users\\jimmy '
@@ -880,21 +880,21 @@
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\imp.py',
    'PYMODULE'),
-  ('stringprep',
+  ('_py_abc',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\stringprep.py',
-   'PYMODULE'),
-  ('typing',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\typing.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\_py_abc.py',
    'PYMODULE'),
   ('tracemalloc',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\tracemalloc.py',
    'PYMODULE'),
-  ('_py_abc',
+  ('typing',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\_py_abc.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\typing.py',
+   'PYMODULE'),
+  ('stringprep',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\stringprep.py',
    'PYMODULE'),
   ('tkinter',
    'c:\\users\\jimmy '
@@ -1560,53 +1560,53 @@
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\__init__.py',
    'PYMODULE'),
-  ('setuptools._vendor.packaging.specifiers',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\specifiers.py',
-   'PYMODULE'),
-  ('setuptools._vendor.packaging._structures',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\_structures.py',
-   'PYMODULE'),
-  ('setuptools._vendor.packaging.version',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\version.py',
-   'PYMODULE'),
-  ('setuptools._vendor.packaging._compat',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\_compat.py',
-   'PYMODULE'),
-  ('setuptools._vendor.pyparsing',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\pyparsing.py',
-   'PYMODULE'),
   ('setuptools._vendor.packaging.__about__',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\__about__.py',
-   'PYMODULE'),
-  ('setuptools._vendor.packaging.markers',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\markers.py',
-   'PYMODULE'),
-  ('setuptools._vendor',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\__init__.py',
    'PYMODULE'),
   ('setuptools._vendor.packaging',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\__init__.py',
    'PYMODULE'),
-  ('setuptools._vendor.packaging.requirements',
+  ('setuptools._vendor.packaging.version',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\requirements.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\version.py',
    'PYMODULE'),
-  ('setuptools._vendor.six',
+  ('setuptools._vendor.packaging._structures',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\six.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\_structures.py',
+   'PYMODULE'),
+  ('setuptools._vendor.packaging._compat',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\_compat.py',
+   'PYMODULE'),
+  ('setuptools._vendor',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\__init__.py',
    'PYMODULE'),
   ('setuptools._vendor.packaging.utils',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\utils.py',
+   'PYMODULE'),
+  ('setuptools._vendor.packaging.specifiers',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\specifiers.py',
+   'PYMODULE'),
+  ('setuptools._vendor.pyparsing',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\pyparsing.py',
+   'PYMODULE'),
+  ('setuptools._vendor.packaging.requirements',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\requirements.py',
+   'PYMODULE'),
+  ('setuptools._vendor.packaging.markers',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\packaging\\markers.py',
+   'PYMODULE'),
+  ('setuptools._vendor.six',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\setuptools\\_vendor\\six.py',
    'PYMODULE'),
   ('setuptools.msvc',
    'c:\\users\\jimmy '
@@ -2204,89 +2204,17 @@
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\Image.py',
    'PYMODULE'),
-  ('PIL.CurImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\CurImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.GbrImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\GbrImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.ImImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\ImImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.PsdImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PsdImagePlugin.py',
-   'PYMODULE'),
   ('PIL.PixarImagePlugin',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PixarImagePlugin.py',
    'PYMODULE'),
-  ('PIL.IptcImagePlugin',
+  ('PIL.PcdImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\IptcImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PcdImagePlugin.py',
    'PYMODULE'),
-  ('PIL.BlpImagePlugin',
+  ('PIL.FpxImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\BlpImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.EpsImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\EpsImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.FliImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\FliImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.GribStubImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\GribStubImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.FitsStubImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\FitsStubImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.DdsImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\DdsImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.DcxImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\DcxImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.WebPImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\WebPImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.MspImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\MspImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.BufrStubImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\BufrStubImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.McIdasImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\McIdasImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.Jpeg2KImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\Jpeg2KImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.PdfImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PdfImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.PdfParser',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PdfParser.py',
-   'PYMODULE'),
-  ('PIL.FtexImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\FtexImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\FpxImagePlugin.py',
    'PYMODULE'),
   ('PIL.SpiderImagePlugin',
    'c:\\users\\jimmy '
@@ -2296,57 +2224,121 @@
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\ImageTk.py',
    'PYMODULE'),
-  ('PIL.PcdImagePlugin',
+  ('PIL.IptcImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PcdImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\IptcImagePlugin.py',
    'PYMODULE'),
-  ('PIL.PcxImagePlugin',
+  ('PIL.PsdImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PcxImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PsdImagePlugin.py',
    'PYMODULE'),
-  ('PIL.MpegImagePlugin',
+  ('PIL.MspImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\MpegImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\MspImagePlugin.py',
    'PYMODULE'),
-  ('PIL.MicImagePlugin',
+  ('PIL.PdfImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\MicImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PdfImagePlugin.py',
    'PYMODULE'),
-  ('PIL.SunImagePlugin',
+  ('PIL.PdfParser',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\SunImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.WmfImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\WmfImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.XpmImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\XpmImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.PalmImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PalmImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.ImtImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\ImtImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.SgiImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\SgiImagePlugin.py',
-   'PYMODULE'),
-  ('PIL.XVThumbImagePlugin',
-   'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\XVThumbImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PdfParser.py',
    'PYMODULE'),
   ('PIL.Hdf5StubImagePlugin',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\Hdf5StubImagePlugin.py',
    'PYMODULE'),
+  ('PIL.XVThumbImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\XVThumbImagePlugin.py',
+   'PYMODULE'),
   ('PIL.XbmImagePlugin',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\XbmImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.TgaImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\TgaImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.DcxImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\DcxImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImtImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\ImtImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.WmfImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\WmfImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.GribStubImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\GribStubImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.FliImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\FliImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.XpmImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\XpmImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.ImImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\ImImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.EpsImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\EpsImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.SunImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\SunImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.GbrImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\GbrImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.McIdasImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\McIdasImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.SgiImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\SgiImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.Jpeg2KImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\Jpeg2KImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.MicImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\MicImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.BufrStubImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\BufrStubImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.BlpImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\BlpImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.FitsStubImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\FitsStubImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.CurImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\CurImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.IcoImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\IcoImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.DdsImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\DdsImagePlugin.py',
    'PYMODULE'),
   ('PIL.IcnsImagePlugin',
    'c:\\users\\jimmy '
@@ -2356,21 +2348,29 @@
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\features.py',
    'PYMODULE'),
-  ('PIL.FpxImagePlugin',
+  ('PIL.PcxImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\FpxImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PcxImagePlugin.py',
    'PYMODULE'),
-  ('PIL.TgaImagePlugin',
+  ('PIL.WebPImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\TgaImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\WebPImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.MpegImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\MpegImagePlugin.py',
    'PYMODULE'),
   ('PIL.MpoImagePlugin',
    'c:\\users\\jimmy '
    'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\MpoImagePlugin.py',
    'PYMODULE'),
-  ('PIL.IcoImagePlugin',
+  ('PIL.FtexImagePlugin',
    'c:\\users\\jimmy '
-   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\IcoImagePlugin.py',
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\FtexImagePlugin.py',
+   'PYMODULE'),
+  ('PIL.PalmImagePlugin',
+   'c:\\users\\jimmy '
+   'hsueh\\appdata\\local\\programs\\python\\python37-32\\lib\\site-packages\\PIL\\PalmImagePlugin.py',
    'PYMODULE'),
   ('PIL.TiffImagePlugin',
    'c:\\users\\jimmy '
