@@ -16,5 +16,5 @@ POLLING_PERIOD = int(1000/POLLING_RATE)
 MAX_VOLTAGE = 5
 CURRENT_SHUNT_RESISTANCE = 1
 
-# viewing frame time in seconds
+# viewing frame time of graph in seconds
 TIME_WINDOW = 2

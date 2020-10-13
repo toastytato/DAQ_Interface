@@ -15,13 +15,13 @@ import matplotlib.ticker as tick
 
 class ChannelView(tk.LabelFrame):
     def __init__(self, parent, channel):
-        tk.LabelFrame.__init__(self, parent, text=("Channel: " + str(channel+1)))
+        tk.LabelFrame.__init__(self, parent, text=("Channel: " + str(channel)))
         self.data_view = DataView(self)
         # self.graph_view = GraphView(self)
         self.controls_view = ControlsView(self)
 
         # self.graph_view.grid(column=1, row=0)
-        self.controls_view.grid(column=0, row=0, sticky=tk.NSEW, padx=(0,5), pady=(10,10))
+        self.controls_view.grid(column=0, row=0, sticky=tk.NSEW, padx=(0,5), pady=(5,10))
         self.data_view.grid(column=0, row=1, pady=(0, 10))
 
         self.grid_columnconfigure(0, weight=1)
@@ -39,7 +39,7 @@ class AllGraphNotebook(tk.Frame):
         self.notebook.add(self.big_graph, text="All Graphs")
         for i in range(num_channels):
             self.channel_graphs.append(GraphView(self.notebook))
-            self.notebook.add(self.channel_graphs[i], text=("Channel: " + str(i+1)))
+            self.notebook.add(self.channel_graphs[i], text=("Channel: " + str(i)))
         self.notebook.pack()
 
 
@@ -88,7 +88,7 @@ class BigGraphView(tk.Frame):
         self.input_checkbutton = []
         for i in range(num_channels):
             self.sensors_draw.append(tk.IntVar())
-            self.input_checkbutton.append(ttk.Checkbutton(self, text=("Input: " + str(i+1)),
+            self.input_checkbutton.append(ttk.Checkbutton(self, text=("Input: " + str(i)),
                                                           takefocus=0,
                                                           variable=self.sensors_draw[i]))
             self.input_checkbutton[i].invoke()
@@ -97,7 +97,7 @@ class BigGraphView(tk.Frame):
         self.setpoint_checkbutton = []
         for i in range(num_channels):
             self.setpoints_draw.append(tk.IntVar())
-            self.setpoint_checkbutton.append(ttk.Checkbutton(self, text=("Setpoint: " + str(i+1)),
+            self.setpoint_checkbutton.append(ttk.Checkbutton(self, text=("Setpoint: " + str(i)),
                                                              takefocus=0,
                                                              variable=self.setpoints_draw[i]))
             self.setpoint_checkbutton[i].invoke()
@@ -113,10 +113,10 @@ class BigGraphView(tk.Frame):
         self.axes.spines['top'].set_visible(False)
         for i, (time, var) in enumerate(zip(t_setpoint, vars_setpoint)):
             if self.setpoints_draw[i].get() == 1:
-                self.axes.plot(time, var, label="Chan: " + str(i+1))
+                self.axes.plot(time, var, label="Chan: " + str(i))
         for i, (time, var) in enumerate(zip(t_sensors, vars_sensor)):
             if self.sensors_draw[i].get() == 1:
-                self.axes.plot(time, var, label="Input: " + str(i+1))
+                self.axes.plot(time, var, label="Input: " + str(i))
         self.axes.legend(loc='upper right', frameon=False, ncol=len(vars_setpoint)*2)
         self.axes.xaxis.set_major_locator(tick.MaxNLocator(integer=True))
         self.fig.tight_layout()
@@ -161,16 +161,25 @@ class GraphView(tk.Frame):
 class ControlsView(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        self.text = tk.Label(self, text="Voltage Out:")
+
+        MODES = ["DC", "AC"]
+        mode_variable = tk.StringVar(self)
+        mode_variable.set(MODES[0])
+
+        self.mode_options = ttk.OptionMenu(self, mode_variable, MODES[0], *MODES)
+
+        self.text = tk.Label(self, text="Output Value (V):")
+
         self.voltage_slider = ttk.Scale(self,
                                         from_=0, to=5.0, # resolution=0.01,
                                         orient='horizontal') #, showvalue=0)
         self.voltage_entry = tk.Entry(self, width=5)
         self.voltage_entry.insert(0, self.voltage_slider.get())
 
-        self.text.grid(row=0, column=0) # , sticky=tk.E) # , pady=(15, 0))
-        self.voltage_entry.grid(row=0, column=1, sticky=tk.W)
-        self.voltage_slider.grid(row=0, column=2, sticky=tk.EW)
+        self.mode_options.grid(row=0, column=1)
+        self.text.grid(row=1, column=0) # , sticky=tk.E) # , pady=(15, 0))
+        self.voltage_entry.grid(row=1, column=1, sticky=tk.W)
+        self.voltage_slider.grid(row=1, column=2, sticky=tk.EW)
         self.grid_columnconfigure(0, weight=2)
         self.grid_columnconfigure(1, weight=1)
 
@@ -185,18 +194,15 @@ class DebugMenuView(tk.LabelFrame):
         self.input_sliders = [tk.Scale(self,
                                        from_=0, to=5, resolution=0.01,
                                        orient='horizontal', showvalue=0) for i in range(num)]
+        self.status_text = tk.StringVar()
+        self.status_text.set("Debugging")
+        self.status_label = tk.Label(self, textvariable=self.status_text, foreground="red")
         self.toggle_text = tk.StringVar()
-        self.toggle_text.set("Debug")
+        self.toggle_text.set("Switch: Normal")
         self.toggle_btn = tk.Button(self, textvariable=self.toggle_text)
 
-        self.usb_label1 = tk.Label(self, text="USB Device Output Name:")
-        self.usb_entry1 = tk.Entry(self, width=10)
-        self.usb_label2 = tk.Label(self, text="USB Device Input Name:")
-        self.usb_entry2 = tk.Entry(self, width=10)
-
+        self.status_label.pack()
         [slider.pack() for slider in self.input_sliders]
-        self.usb_label1.pack()
-        self.usb_entry1.pack()
         self.toggle_btn.pack()
 
 
