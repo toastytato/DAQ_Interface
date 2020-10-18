@@ -6,11 +6,15 @@ import matplotlib.ticker as tick
 
 # GUI elements
 
-# TODO: output current
-#       output voltage
-#       output frequency
-#       three channels
-#       calibrate voltage to input
+class JoystickView(tk.Frame):
+    def __init__(self, parent):
+        tk.Frame.__init__(self, parent)
+        w = 200
+        h = 200
+        self.canvas = tk.Canvas(self, width=w, height=h)
+        self.canvas.pack(side="top")
+
+        self.canvas.create_rectangle(0,0, w, h, fill="gray")
 
 
 class ChannelView(tk.LabelFrame):
@@ -74,7 +78,7 @@ class BigGraphView(tk.Frame):
         self.text = tk.Label(self, text="Big Graph")
         self.text.grid(row=0, columnspan=num_channels*2)
 
-        self.fig = plt.Figure(figsize=(10, 4))
+        self.fig = plt.Figure(figsize=(11, 4))
         self.fig.patch.set_facecolor('#E0E0E0')
 
         self.title = "Voltage"
@@ -113,10 +117,10 @@ class BigGraphView(tk.Frame):
         self.axes.spines['top'].set_visible(False)
         for i, (time, var) in enumerate(zip(t_setpoint, vars_setpoint)):
             if self.setpoints_draw[i].get() == 1:
-                self.axes.plot(time, var, label="Chan: " + str(i))
+                self.axes.plot(time, var, label="Chan: " + str(i), linewidth=1)
         for i, (time, var) in enumerate(zip(t_sensors, vars_sensor)):
             if self.sensors_draw[i].get() == 1:
-                self.axes.plot(time, var, label="Input: " + str(i))
+                self.axes.plot(time, var, label="Input: " + str(i), linewidth=1)
         self.axes.legend(loc='upper right', frameon=False, ncol=len(vars_setpoint)*2)
         self.axes.xaxis.set_major_locator(tick.MaxNLocator(integer=True))
         self.fig.tight_layout()
@@ -162,30 +166,64 @@ class ControlsView(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
 
-        MODES = ["DC", "AC"]
-        mode_variable = tk.StringVar(self)
-        mode_variable.set(MODES[0])
+        modes = ["DC", "AC"]
+        self.mode_state = tk.StringVar(self)
+        self.mode_state.set(modes[0])
 
-        self.mode_options = ttk.OptionMenu(self, mode_variable, MODES[0], *MODES)
+        self.volt_frame = tk.Frame(self)
+        self.freq_frame = tk.Frame(self)
 
-        self.text = tk.Label(self, text="Output Value (V):")
+        self.mode_options = ttk.OptionMenu(self.volt_frame, self.mode_state, modes[0], *modes)
 
-        self.voltage_slider = ttk.Scale(self,
+        self.ac_volt_label = tk.Label(self.volt_frame, text='(V)')
+        self.ac_freq_label = tk.Label(self.freq_frame, text="Frequency (Hz): ")
+
+        self.voltage_slider = ttk.Scale(self.volt_frame,
                                         from_=0, to=5.0, # resolution=0.01,
                                         orient='horizontal') #, showvalue=0)
-        self.voltage_entry = tk.Entry(self, width=5)
+        self.frequency_slider = ttk.Scale(self.freq_frame,
+                                        from_=0, to=200,  # resolution=0.01,
+                                        orient='horizontal')  # , showvalue=0)
+
+        self.voltage_entry = tk.Entry(self.volt_frame, width=6)
         self.voltage_entry.insert(0, self.voltage_slider.get())
 
-        # self.mode_options.grid(row=0, column=1)
-        self.text.grid(row=1, column=0) # , sticky=tk.E) # , pady=(15, 0))
-        self.voltage_entry.grid(row=1, column=1, sticky=tk.W)
-        self.voltage_slider.grid(row=1, column=2, sticky=tk.EW)
+        self.frequency_entry = tk.Entry(self.freq_frame, width=6)
+        self.frequency_entry.insert(0, self.frequency_slider.get())
+
+        self.mode_options.pack(side='left')
+        self.ac_volt_label.pack(side='left')
+        self.voltage_slider.pack(side='right', anchor='e')
+        self.voltage_entry.pack(side='right')
+
+        self.ac_freq_label.pack(side='left')
+        self.frequency_slider.pack(side='right')
+        self.frequency_entry.pack(side='right')
+
+        self.volt_frame.pack(fill='x')
+        self.freq_frame.pack()
+
         self.grid_columnconfigure(0, weight=2)
         self.grid_columnconfigure(1, weight=1)
 
     def refresh_entry(self):
         self.voltage_entry.delete(0, tk.END)
         self.voltage_entry.insert(0, "{:.2f}".format(self.voltage_slider.get()))
+
+        self.frequency_entry.delete(0, tk.END)
+        self.frequency_entry.insert(0, "{:.2f}".format(self.frequency_slider.get()))
+
+    def enable_frequency(self):
+        print("enable")
+        self.ac_freq_label.configure(foreground='black')
+        self.frequency_entry.configure(state='normal')
+        self.frequency_slider.configure(state='normal')
+
+    def disable_frequency(self):
+        print("disable")
+        self.ac_freq_label.configure(foreground='gray')
+        self.frequency_entry.configure(state='disabled')
+        self.frequency_slider.configure(state='disabled')
 
 
 class DebugMenuView(tk.LabelFrame):

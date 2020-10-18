@@ -1,7 +1,12 @@
+from nidaqmx.constants import AcquisitionType
+
 from constants import *
 import nidaqmx
+import numpy as np
 import time
 import math
+
+# contains data containers as well as helper functions for output to DAQ
 
 out_prefix = "Dev1"
 in_prefix = "Dev2"
@@ -16,6 +21,21 @@ def analog_out(channel, voltage):
         task.ao_channels.add_ao_voltage_chan(path)
         print(task.write(voltage))
 
+def ac_out(channel, voltage):
+    with nidaqmx.Task() as task:
+        task.ao_channels.add_ao_voltage_chan('Dev1/ao' + str(channel))
+        # rate is samples/second
+        # samps_per_chan is number of samples in the buffer
+        task.timing.cfg_samp_clk_timing(rate=80, sample_mode=AcquisitionType.CONTINUOUS, samps_per_chan=40)
+
+        analog_writer = nidaqmx.stream_writers.AnalogSingleChannelWriter(task.out_stream, auto_start=True)
+
+        buffer = np.append(5 * np.ones(30), np.zeros(10))
+
+        analog_writer.write_many_sample(buffer)
+        task.wait_until_done()
+
+
 def analog_in(channel):
     # Same as above, change as needed
     path = in_prefix + "/ai" + str(channel)
@@ -25,11 +45,14 @@ def analog_in(channel):
         print(input[0])
         return input
 
-def verify_input(input):
+def verify_input(input, min, max):
     input = float(input)
-    if input > MAX_VOLTAGE:
-        print("Entered value exceeded max voltage, set to max")
-        return MAX_VOLTAGE
+    if input > max:
+        print("Entered value exceeded max value, set to max")
+        return max
+    elif input < min:
+        print("Entered value below min value, set to min")
+        return min
     else:
         return input
 

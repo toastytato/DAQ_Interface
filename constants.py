@@ -14,6 +14,7 @@ POLLING_PERIOD = int(1000/POLLING_RATE)
 
 # Constants for model
 MAX_VOLTAGE = 5
+MAX_FREQUENCY = 200
 CURRENT_SHUNT_RESISTANCE = 1
 
 # viewing frame time of graph in seconds

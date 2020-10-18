@@ -3,6 +3,8 @@ import view
 import model
 from constants import *
 import tkinter as tk
+from functools import partial
+
 
 channel_views = []
 channel_data = []
@@ -38,7 +40,7 @@ def refresh_interface():
         vars_sensor.append(channel_data[ch].inputs)
         time_sensor.append(channel_data[ch].input_times)
 
-        if -1 < active_channel < NUM_CHANNELS:
+        if 0 <= active_channel < NUM_CHANNELS:
             channel_views[active_channel].controls_view.refresh_entry()
 
     if active_tab == 0:
@@ -79,13 +81,23 @@ def on_slider_release(event):
 
 
 def value_enter(event, channel, widget):
-    value = model.verify_input(event.widget.get())
-    channel_views[channel].controls_view.voltage_slider.set(value)
+    if widget == 'vt':
+        value = model.verify_input(event.widget.get(), 0, MAX_VOLTAGE)
+        channel_views[channel].controls_view.voltage_slider.set(value)
+    elif widget == 'ft':
+        value = model.verify_input(event.widget.get(), 0, MAX_FREQUENCY)
+        channel_views[channel].controls_view.frequency_slider.set(value)
+
     print('entered')
 
-#
-# def usb_enter(event):
-#     name = debug_view.usb_entry1.get()
+
+def on_output_mode_change(channel, *args):
+    print('changed')
+    print(channel_views[channel].controls_view.mode_state.get())
+    if channel_views[channel].controls_view.mode_state.get() == 'DC':
+        channel_views[channel].controls_view.disable_frequency()
+    else:
+        channel_views[channel].controls_view.enable_frequency()
 
 
 def on_notebook_select(event):
@@ -120,32 +132,59 @@ if __name__ == '__main__':
     root = tk.Tk()
     root.title("DAQ Control Interface")
 
-    debug_view = view.DebugMenuView(root, NUM_CHANNELS)
+    # to format the layout better
+    SidePanel = tk.Frame(root)  # on the left side
+    GraphPanel = tk.Frame(root)  # on the top right side
+    ControlsPanel = tk.Frame(root)  # on the bottom right side
+
+    joystick_view = view.JoystickView(SidePanel)
+    debug_view = view.DebugMenuView(ControlsPanel, NUM_CHANNELS)
     debug_view.toggle_btn.bind('<Button-1>', debug_mode_toggle)
-    graph_notebook = view.AllGraphNotebook(root, NUM_CHANNELS)
+    graph_notebook = view.AllGraphNotebook(GraphPanel, NUM_CHANNELS)
     graph_notebook.notebook.bind('<Button-1>', on_notebook_select)
 
     # create the 3 output channels
     for i in range(NUM_CHANNELS):
-        channel_views.append(view.ChannelView(root, channel=i))
+        channel_views.append(view.ChannelView(ControlsPanel, channel=i))
         channel_data.append(model.ChannelData())
+
+        channel_views[i].controls_view.mode_state.trace('w', partial(on_output_mode_change, i))
+        on_output_mode_change(i)    # make sure that the first initial state is configured
+
         channel_views[i].controls_view.voltage_slider.bind('<Button-1>',
                                                            lambda event, channel=i, widget='vs':
                                                            on_slider_press(event, channel, widget))
-        debug_view.input_sliders[i].bind('<Button-1>',
-                                         lambda event, channel=4, widget=i:
-                                         on_slider_press(event, channel, widget))
+        channel_views[i].controls_view.frequency_slider.bind('<Button-1>',
+                                                             lambda event, channel=i, widget='fs':
+                                                             on_slider_press(event, channel, widget))
+
+        channel_views[i].controls_view.voltage_slider.bind('<ButtonRelease-1>', on_slider_release)
+        channel_views[i].controls_view.frequency_slider.bind('<ButtonRelease-1>', on_slider_release)
+
         channel_views[i].controls_view.voltage_entry.bind('<Return>',
                                                           lambda event, channel=i, widget='vt':
                                                           value_enter(event, channel, widget))
+        channel_views[i].controls_view.frequency_entry.bind('<Return>',
+                                                            lambda event, channel=i, widget='ft':
+                                                            value_enter(event, channel, widget))
 
-        channel_views[i].controls_view.voltage_slider.bind('<ButtonRelease-1>', on_slider_release)
+        debug_view.input_sliders[i].bind('<Button-1>',
+                                         lambda event, channel=4, widget=i:
+                                         on_slider_press(event, channel, widget))
+
         debug_view.input_sliders[i].bind('<ButtonRelease-1>', on_slider_release)
 
-        channel_views[i].grid(row=1, column=i, sticky=tk.NSEW)
+        channel_views[i].pack(side='left')
 
-    graph_notebook.grid(row=0, columnspan=NUM_CHANNELS + 1)
-    debug_view.grid(row=1, column=NUM_CHANNELS, sticky=tk.NSEW)
+    debug_view.pack(side='left')
+
+    joystick_view.pack()
+    # SidePanel.grid(row=0, column=1, rowspan=2)
+
+    graph_notebook.pack()
+    GraphPanel.grid(row=0, column=0)
+
+    ControlsPanel.grid(row=1, column=0)
 
     refresh_sensor_input()
     refresh_interface()
