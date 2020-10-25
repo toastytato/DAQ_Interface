@@ -37,42 +37,17 @@ class AllGraphNotebook(tk.Frame):
 
         self.notebook = ttk.Notebook(self)
         self.notebook.pack()
-        self.big_graph = BigGraphView(self.notebook, num_channels)
+        self.big_graph = MainGraphView(self.notebook, num_channels)
         self.channel_graphs = []
 
         self.notebook.add(self.big_graph, text="All Graphs")
         for i in range(num_channels):
-            self.channel_graphs.append(GraphView(self.notebook))
+            self.channel_graphs.append(SingleGraphView(self.notebook))
             self.notebook.add(self.channel_graphs[i], text=("Channel: " + str(i)))
         self.notebook.pack()
 
 
-class DataView(tk.Frame):
-    def __init__(self, parent):
-        tk.Frame.__init__(self, parent)
-        self.vout_text = tk.StringVar()
-        self.vout_text.set("V_out: 0")
-        self.vout_label = tk.Label(self, textvariable=self.vout_text)
-
-        self.vin_text = tk.StringVar()
-        self.vin_text.set("V_in: 0")
-        self.vin_label = tk.Label(self, textvariable=self.vin_text)
-
-        self.iin_text = tk.StringVar()
-        self.iin_text.set("I_in: 0")
-        self.iin_label = tk.Label(self, textvariable=self.iin_text)
-
-        self.vout_label.grid()
-        self.vin_label.grid()
-        self.iin_label.grid()
-
-    def update_val(self, v_out, v_in, current):
-        self.vout_text.set("V_out: " + "{:.2f}".format(v_out) + " V")
-        self.vin_text.set("V_in: " + "{:.2f}".format(v_in) + " V")
-        self.iin_text.set("I_in: " + "{:.2f}".format(current) + " mA")
-
-
-class BigGraphView(tk.Frame):
+class MainGraphView(tk.Frame):
     def __init__(self, parent, num_channels):
         tk.Frame.__init__(self, parent)
         self.text = tk.Label(self, text="Big Graph")
@@ -127,13 +102,13 @@ class BigGraphView(tk.Frame):
         self.canvas.draw()
 
 
-class GraphView(tk.Frame):
+class SingleGraphView(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         self.text = tk.Label(self, text="Graph")
         self.text.pack()
 
-        self.fig = plt.Figure(figsize=(9, 2))
+        self.fig = plt.Figure(figsize=(11, 4))
         self.title = "Voltage"
         self.needs_animate = True
 
@@ -143,16 +118,15 @@ class GraphView(tk.Frame):
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH)
 
-    def animate(self, t, y, z):
-        # if self.needs_animate:
+    def animate(self, t, y):
+        max = 10
 
         self.axes.clear()
         self.axes.set_ylabel(self.title)
         self.axes.set_xlabel('Time')
-        self.axes.set_ylim([0, 6])
-        self.axes.plot(t, y,
-                       t, z)
-        self.axes.xaxis.set_major_formatter(plt.NullFormatter())
+        self.axes.set_ylim([-max, max])
+        self.axes.plot(t, y)
+        # elf.axes.xaxis.set_major_formatter(plt.NullFormatter())
         self.fig.tight_layout()
         self.canvas.draw()
 
@@ -167,13 +141,14 @@ class ControlsView(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         modes = ["DC", "AC"]
+        initial = modes[1]
         self.mode_state = tk.StringVar(self)
-        self.mode_state.set(modes[0])
+        self.mode_state.set(initial)
 
         self.volt_frame = tk.Frame(self)
         self.freq_frame = tk.Frame(self)
 
-        self.mode_options = ttk.OptionMenu(self.volt_frame, self.mode_state, modes[0], *modes)
+        self.mode_options = ttk.OptionMenu(self.volt_frame, self.mode_state, initial, *modes)
 
         self.ac_volt_label = tk.Label(self.volt_frame, text='(V)')
         self.ac_freq_label = tk.Label(self.freq_frame, text="Frequency (Hz): ")
@@ -226,6 +201,31 @@ class ControlsView(tk.Frame):
         self.frequency_slider.configure(state='disabled')
 
 
+class DataView(tk.Frame):
+    def __init__(self, parent):
+        tk.Frame.__init__(self, parent)
+        self.vout_text = tk.StringVar()
+        self.vout_text.set("V_out: 0")
+        self.vout_label = tk.Label(self, textvariable=self.vout_text)
+
+        self.vin_text = tk.StringVar()
+        self.vin_text.set("V_in: 0")
+        self.vin_label = tk.Label(self, textvariable=self.vin_text)
+
+        self.iin_text = tk.StringVar()
+        self.iin_text.set("I_in: 0")
+        self.iin_label = tk.Label(self, textvariable=self.iin_text)
+
+        self.vout_label.grid()
+        self.vin_label.grid()
+        self.iin_label.grid()
+
+    def update_val(self, v_out, v_in, current):
+        self.vout_text.set("V_out: " + "{:.2f}".format(v_out) + " V")
+        self.vin_text.set("V_in: " + "{:.2f}".format(v_in) + " V")
+        self.iin_text.set("I_in: " + "{:.2f}".format(current) + " mA")
+
+
 class DebugMenuView(tk.LabelFrame):
     def __init__(self, parent, num):
         tk.LabelFrame.__init__(self, parent, text="Debug Menu")
@@ -242,9 +242,3 @@ class DebugMenuView(tk.LabelFrame):
         self.status_label.pack()
         [slider.pack() for slider in self.input_sliders]
         self.toggle_btn.pack()
-
-
-class CalibrationWindow(tk.Frame):
-    def __init__(self, parent):
-        tk.Frame.__init__(self, parent)
-

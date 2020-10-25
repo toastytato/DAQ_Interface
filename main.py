@@ -5,10 +5,18 @@ from constants import *
 import tkinter as tk
 from functools import partial
 
+# MAIN: the controller passing data from the view (UI) and model (Data)
+# Consists of:
+# - Initializing the view elements
+# - Callback functions for event triggers on view elements
+# - Passing data to model
+# - Refreshing the interface
 
 channel_views = []
 channel_data = []
+channel_io = []
 
+# these flags keep track of which widget or tab is active/activated
 active_channel = -1
 active_widget = -1
 active_tab = 0
@@ -19,45 +27,64 @@ debug_mode = True
 # periodic function for animations/live feedback
 
 def refresh_interface():
-    vars_setpoint = []
-    time_setpoint = []
-    vars_sensor = []
-    time_sensor = []
+    # list for holding the points to plot for all channels
+    vars_output = []
+    time_output = []
+    vars_input = []
+    time_input = []
 
     for ch in range(NUM_CHANNELS):
         setpoint = channel_views[ch].controls_view.voltage_slider.get()
-        channel_data[ch].update_setpoints(setpoint)
+        channel_data[ch].append_graph_outputs(setpoint)
         if not debug_mode:
-            model.analog_out(ch, setpoint)
+            channel_io[ch].dc_out(setpoint)
+        else:
+            sensor_val = debug_view.input_sliders[ch].get()
+            channel_data[ch].append_graph_inputs(sensor_val)
 
-        v_in = channel_data[ch].voltage_in
-        i_in = channel_data[ch].current_in
+        # get last value recorded for inputs to display
+        v_in = channel_data[ch].inputs[-1]
+        i_in = model.voltage_to_current(v_in)
         channel_views[ch].data_view.update_val(setpoint, v_in, i_in)
 
-        vars_setpoint.append(channel_data[ch].setpoints)
-        time_setpoint.append(channel_data[ch].setpoint_times)
+        # add the output and input graph values to the empty list for plotting
+        vars_output.append(channel_data[ch].setpoints)
+        time_output.append(channel_data[ch].setpoint_times)
 
-        vars_sensor.append(channel_data[ch].inputs)
-        time_sensor.append(channel_data[ch].input_times)
+        vars_input.append(channel_data[ch].inputs)
+        time_input.append(channel_data[ch].input_times)
 
-        if 0 <= active_channel < NUM_CHANNELS:
-            channel_views[active_channel].controls_view.refresh_entry()
+        # for displaying the frequency graph
+        if active_tab - 1 == ch:
+            times = channel_io[ch].output_samples
+            outputs = channel_io[ch].output_buffer
+            graph_notebook.channel_graphs[ch].animate(times, outputs)
+
+    if 0 <= active_channel < NUM_CHANNELS:
+        channel_views[active_channel].controls_view.refresh_entry()
 
     if active_tab == 0:
-        graph_notebook.big_graph.animate(time_setpoint, vars_setpoint,
-                                         time_sensor, vars_sensor)
+        graph_notebook.big_graph.animate(time_output, vars_output,
+                                         time_input, vars_input)
 
     root.after(REFRESH_PERIOD, refresh_interface)
 
 
-def refresh_sensor_input():
+def refresh_io():
     for ch in range(NUM_CHANNELS):
-        if debug_mode:
-            sensor_val = debug_view.input_sliders[ch].get()
-        else:
-            sensor_val = model.analog_in(ch)
-        channel_data[ch].update_inputs(sensor_val)
-    root.after(POLLING_PERIOD, refresh_sensor_input)
+        if not debug_mode:
+            sensor_val = channel_io[ch].analog_in()
+            channel_data[ch].append_graph_inputs(sensor_val)
+
+        # start output sequence:
+        # ac_out will create a buffer of the signal waveform to push to the DAQ
+        # that will persist until next instance of refresh_io maybe
+        if channel_views[ch].controls_view.mode_state.get() == 'AC':
+            frequency = channel_views[ch].controls_view.frequency_slider.get()
+            voltage = channel_views[ch].controls_view.voltage_slider.get()
+            channel_io[ch].ac_out(voltage, frequency, debug_mode)
+
+    root.after(POLLING_PERIOD, refresh_io)
 
 
 # on event functions
@@ -113,7 +140,7 @@ def on_notebook_select(event):
     print(active_tab)
 
 
-def debug_mode_toggle(event):
+def on_debug_mode_toggle(event):
     global debug_mode
     debug_mode = not debug_mode
     if debug_mode:
@@ -127,6 +154,8 @@ def debug_mode_toggle(event):
 
 
 # initializations
+# create the UI elements
+# bind key/mouse presses to its assigned function
 
 if __name__ == '__main__':
     root = tk.Tk()
@@ -139,14 +168,15 @@ if __name__ == '__main__':
 
     joystick_view = view.JoystickView(SidePanel)
     debug_view = view.DebugMenuView(ControlsPanel, NUM_CHANNELS)
-    debug_view.toggle_btn.bind('<Button-1>', debug_mode_toggle)
+    debug_view.toggle_btn.bind('<Button-1>', on_debug_mode_toggle)
     graph_notebook = view.AllGraphNotebook(GraphPanel, NUM_CHANNELS)
     graph_notebook.notebook.bind('<Button-1>', on_notebook_select)
 
     # create the 3 output channels
     for i in range(NUM_CHANNELS):
         channel_views.append(view.ChannelView(ControlsPanel, channel=i))
-        channel_data.append(model.ChannelData())
+        channel_data.append(model.ChannelInterfaceData())
+        channel_io.append(model.ChannelIO(i))
 
         channel_views[i].controls_view.mode_state.trace('w', partial(on_output_mode_change, i))
         on_output_mode_change(i)    # make sure that the first initial state is configured
@@ -186,7 +216,7 @@ if __name__ == '__main__':
 
     ControlsPanel.grid(row=1, column=0)
 
-    refresh_sensor_input()
+    refresh_io()
     refresh_interface()
     root.protocol("WM_DELETE_WINDOW", sys.exit)
     root.mainloop()
