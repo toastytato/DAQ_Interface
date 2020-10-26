@@ -11,6 +11,7 @@ from functools import partial
 # - Callback functions for event triggers on view elements
 # - Passing data to model
 # - Refreshing the interface
+# - Calling the output/input functions to the DAQ
 
 channel_views = []
 channel_data = []
@@ -21,11 +22,12 @@ active_channel = -1
 active_widget = -1
 active_tab = 0
 
+# default debug state is true because running the NI DAQ functions without
+# the devices connected crashes the program
 debug_mode = True
 
 
-# periodic function for animations/live feedback
-
+# periodic callback function to refresh the graph animations
 def refresh_interface():
     # list for holding the points to plot for all channels
     vars_output = []
@@ -69,7 +71,7 @@ def refresh_interface():
 
     root.after(REFRESH_PERIOD, refresh_interface)
 
-
+# periodic callback function to read and output to the DAQ I/O
 def refresh_io():
     for ch in range(NUM_CHANNELS):
         if not debug_mode:
@@ -79,7 +81,7 @@ def refresh_io():
         # start output sequence:
         # ac_out will create a buffer of the signal waveform to push to the DAQ
         # that will persist until next instance of refresh_io maybe
-        if channel_views[ch].controls_view.mode_state.get() == 'AC':
+        if channel_views[ch].controls_view.output_mode_state.get() == 'AC':
             frequency = channel_views[ch].controls_view.frequency_slider.get()
             voltage = channel_views[ch].controls_view.voltage_slider.get()
             channel_io[ch].ac_out(voltage, frequency, debug_mode)
@@ -120,8 +122,8 @@ def value_enter(event, channel, widget):
 
 def on_output_mode_change(channel, *args):
     print('changed')
-    print(channel_views[channel].controls_view.mode_state.get())
-    if channel_views[channel].controls_view.mode_state.get() == 'DC':
+    print(channel_views[channel].controls_view.output_mode_state.get())
+    if channel_views[channel].controls_view.output_mode_state.get() == 'DC':
         channel_views[channel].controls_view.disable_frequency()
     else:
         channel_views[channel].controls_view.enable_frequency()
@@ -178,7 +180,7 @@ if __name__ == '__main__':
         channel_data.append(model.ChannelInterfaceData())
         channel_io.append(model.ChannelIO(i))
 
-        channel_views[i].controls_view.mode_state.trace('w', partial(on_output_mode_change, i))
+        channel_views[i].controls_view.output_mode_state.trace('w', partial(on_output_mode_change, i))
         on_output_mode_change(i)    # make sure that the first initial state is configured
 
         channel_views[i].controls_view.voltage_slider.bind('<Button-1>',

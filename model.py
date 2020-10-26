@@ -8,6 +8,7 @@ import math
 # MODEL: handles backend of the program
 # contains data containers as well as helper functions for output to DAQ
 
+# helper functions
 def verify_input(input, min, max):
     input = float(input)
     if input > max:
@@ -47,7 +48,7 @@ class ChannelInterfaceData:
             self.setpoint_times.pop(0)
             self.setpoints.pop(0)
 
-
+# Handles the input and output to the DAQ for each channel
 class ChannelIO:
     def __init__(self, channel):
         self.channel = channel
@@ -55,7 +56,7 @@ class ChannelIO:
         self.output_samples = []
 
         self.sampling_rate = int(44100)
-        samples_in_window = 1 * 44100
+        # samples_in_window = 1 * 44100
         self.graph_times = [0]
         self.graph_outputs = [0]
 
@@ -75,7 +76,7 @@ class ChannelIO:
     # this should create a continuous variable frequency signal
     def ac_out(self, voltage, frequency, debug):
         try:
-            signal_time = 2/POLLING_RATE    # 1/frequency  # period of the sin wave
+            signal_time = (1/POLLING_RATE) * 1.5    # 1/frequency  # period of the sin wave
         except ZeroDivisionError:
             signal_time = 0
 
@@ -83,17 +84,16 @@ class ChannelIO:
             samples_per_signal = int(signal_time * self.sampling_rate)   # number of signals in buffer
         else:
             samples_per_signal = self.sampling_rate  # preventing excess samples in buffer when frequency is low
-        try:
-            phase = self.output_samples[-1] % (2 * np.pi)
-        except IndexError:
-            phase = 0
+        # try:
+        #     phase = self.output_samples[-1] % (2 * np.pi)
+        # except IndexError:
+        #     phase = 0
 
         amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
         w = 2 * np.pi * frequency
 
         self.time = time.time() - self.time_prev
-        # self.time_prev = time.time()
-        print(self.time)
+        # print(self.time)
         self.output_samples = np.linspace(self.time, self.time + signal_time, num=samples_per_signal)
         self.output_buffer = amplitude*np.sin(self.output_samples * w)
 
@@ -119,9 +119,6 @@ class ChannelIO:
                     self.graph_outputs.pop(0)
 
         print(self.output_buffer)
-
-
-
 
     def analog_in(self):
         # Same as above, change as needed

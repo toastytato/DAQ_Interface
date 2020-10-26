@@ -9,7 +9,7 @@ NUM_CHANNELS = 3
 REFRESH_RATE = 24
 REFRESH_PERIOD = int(1000/REFRESH_RATE)     # in ms
 # Refresh rate for sensor sampling
-POLLING_RATE = 12
+POLLING_RATE = 25
 POLLING_PERIOD = int(1000/POLLING_RATE)     # in ms
 
 # Constants for model
@@ -17,5 +17,5 @@ MAX_VOLTAGE = 5
 MAX_FREQUENCY = 200
 CURRENT_SHUNT_RESISTANCE = 1
 
-# viewing frame time of graph in seconds
+# viewing frame time of big graph in seconds
 TIME_WINDOW = 2

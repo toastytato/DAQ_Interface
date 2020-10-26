@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.ticker as tick
 
-# GUI elements
+
+# VIEW: contains the GUI elements and containers
 
 class JoystickView(tk.Frame):
     def __init__(self, parent):
@@ -14,7 +15,7 @@ class JoystickView(tk.Frame):
         self.canvas = tk.Canvas(self, width=w, height=h)
         self.canvas.pack(side="top")
 
-        self.canvas.create_rectangle(0,0, w, h, fill="gray")
+        self.canvas.create_rectangle(0, 0, w, h, fill="gray")
 
 
 class ChannelView(tk.LabelFrame):
@@ -25,7 +26,7 @@ class ChannelView(tk.LabelFrame):
         self.controls_view = ControlsView(self)
 
         # self.graph_view.grid(column=1, row=0)
-        self.controls_view.grid(column=0, row=0, sticky=tk.NSEW, padx=(0,5), pady=(5,10))
+        self.controls_view.grid(column=0, row=0, sticky=tk.NSEW, padx=(0, 5), pady=(5, 10))
         self.data_view.grid(column=0, row=1, pady=(0, 10))
 
         self.grid_columnconfigure(0, weight=1)
@@ -51,7 +52,7 @@ class MainGraphView(tk.Frame):
     def __init__(self, parent, num_channels):
         tk.Frame.__init__(self, parent)
         self.text = tk.Label(self, text="Big Graph")
-        self.text.grid(row=0, columnspan=num_channels*2)
+        self.text.grid(row=0, columnspan=num_channels * 2)
 
         self.fig = plt.Figure(figsize=(11, 4))
         self.fig.patch.set_facecolor('#E0E0E0')
@@ -61,7 +62,7 @@ class MainGraphView(tk.Frame):
 
         # self.axes.set_title("hi")
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
-        self.canvas.get_tk_widget().grid(row=1, columnspan=num_channels*2)
+        self.canvas.get_tk_widget().grid(row=1, columnspan=num_channels * 2)
 
         self.sensors_draw = []
         self.input_checkbutton = []
@@ -80,7 +81,7 @@ class MainGraphView(tk.Frame):
                                                              takefocus=0,
                                                              variable=self.setpoints_draw[i]))
             self.setpoint_checkbutton[i].invoke()
-            self.setpoint_checkbutton[i].grid(row=2, column=num_channels+i)
+            self.setpoint_checkbutton[i].grid(row=2, column=num_channels + i)
 
     def animate(self, t_setpoint, vars_setpoint, t_sensors, vars_sensor):
         self.axes.clear()
@@ -96,7 +97,7 @@ class MainGraphView(tk.Frame):
         for i, (time, var) in enumerate(zip(t_sensors, vars_sensor)):
             if self.sensors_draw[i].get() == 1:
                 self.axes.plot(time, var, label="Input: " + str(i), linewidth=1)
-        self.axes.legend(loc='upper right', frameon=False, ncol=len(vars_setpoint)*2)
+        self.axes.legend(loc='upper right', frameon=False, ncol=len(vars_setpoint) * 2)
         self.axes.xaxis.set_major_locator(tick.MaxNLocator(integer=True))
         self.fig.tight_layout()
         self.canvas.draw()
@@ -142,23 +143,23 @@ class ControlsView(tk.Frame):
 
         modes = ["DC", "AC"]
         initial = modes[1]
-        self.mode_state = tk.StringVar(self)
-        self.mode_state.set(initial)
+        self.output_mode_state = tk.StringVar(self)
+        self.output_mode_state.set(initial)
 
         self.volt_frame = tk.Frame(self)
         self.freq_frame = tk.Frame(self)
 
-        self.mode_options = ttk.OptionMenu(self.volt_frame, self.mode_state, initial, *modes)
+        self.mode_options = ttk.OptionMenu(self.volt_frame, self.output_mode_state, initial, *modes)
 
         self.ac_volt_label = tk.Label(self.volt_frame, text='(V)')
         self.ac_freq_label = tk.Label(self.freq_frame, text="Frequency (Hz): ")
 
         self.voltage_slider = ttk.Scale(self.volt_frame,
-                                        from_=0, to=5.0, # resolution=0.01,
-                                        orient='horizontal') #, showvalue=0)
-        self.frequency_slider = ttk.Scale(self.freq_frame,
-                                        from_=0, to=200,  # resolution=0.01,
+                                        from_=0, to=5.0,  # resolution=0.01,
                                         orient='horizontal')  # , showvalue=0)
+        self.frequency_slider = ttk.Scale(self.freq_frame,
+                                          from_=0, to=200,  # resolution=0.01,
+                                          orient='horizontal')  # , showvalue=0)
 
         self.voltage_entry = tk.Entry(self.volt_frame, width=6)
         self.voltage_entry.insert(0, self.voltage_slider.get())
