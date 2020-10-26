@@ -29,8 +29,8 @@ class ChannelInterfaceData:
         self.time_init = time.time()
         self.inputs = []   # values from input
         self.input_times = []  # time counter
-        self.setpoints = []   # setpoint values
-        self.setpoint_times = []
+        self.outputs = []   # setpoint values
+        self.output_times = []
 
     def append_graph_inputs(self, sensor_val):
         curr_time = time.time() - self.time_init
@@ -42,11 +42,11 @@ class ChannelInterfaceData:
 
     def append_graph_outputs(self, output_val):
         curr_time = time.time() - self.time_init
-        self.setpoint_times.append(curr_time)
-        self.setpoints.append(output_val)
-        while self.setpoint_times[-1] - self.setpoint_times[0] >= TIME_WINDOW:
-            self.setpoint_times.pop(0)
-            self.setpoints.pop(0)
+        self.output_times.append(curr_time)
+        self.outputs.append(output_val)
+        while self.output_times[-1] - self.output_times[0] >= TIME_WINDOW:
+            self.output_times.pop(0)
+            self.outputs.pop(0)
 
 # Handles the input and output to the DAQ for each channel
 class ChannelIO:
@@ -63,12 +63,13 @@ class ChannelIO:
         self.time = time.time()
         self.time_prev = time.time()
 
-    def dc_out(self, voltage):
+    def dc_out(self, voltage, debug):
         path = "Dev1/ao" + str(self.channel)
         print(path)
-        with nidaqmx.Task() as task:
-            task.ao_channels.add_ao_voltage_chan(path)
-            print(task.write(voltage))
+        if not debug:
+            with nidaqmx.Task() as task:
+                task.ao_channels.add_ao_voltage_chan(path)
+                print(task.write(voltage))
 
     # generates a sin wave to output to the DAQ
     # continues the frequency with signals up till the polling period

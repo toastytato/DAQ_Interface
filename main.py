@@ -36,22 +36,25 @@ def refresh_interface():
     time_input = []
 
     for ch in range(NUM_CHANNELS):
-        setpoint = channel_views[ch].controls_view.voltage_slider.get()
-        channel_data[ch].append_graph_outputs(setpoint)
-        if not debug_mode:
-            channel_io[ch].dc_out(setpoint)
-        else:
+
+        # grab inputs from debug menu if debugging
+        if debug_mode:
             sensor_val = debug_view.input_sliders[ch].get()
             channel_data[ch].append_graph_inputs(sensor_val)
 
-        # get last value recorded for inputs to display
+        # get outputs and store in channel data
+        voltage = channel_views[ch].controls_view.voltage_slider.get()
+        channel_data[ch].append_graph_outputs(voltage)
+
+        # get last value recorded for inputs to display as text
+        v_out = voltage
         v_in = channel_data[ch].inputs[-1]
         i_in = model.voltage_to_current(v_in)
-        channel_views[ch].data_view.update_val(setpoint, v_in, i_in)
+        channel_views[ch].data_view.update_val(v_out, v_in, i_in)
 
-        # add the output and input graph values to the empty list for plotting
-        vars_output.append(channel_data[ch].setpoints)
-        time_output.append(channel_data[ch].setpoint_times)
+        # add the output and input graph values for all channels to the empty list for plotting
+        vars_output.append(channel_data[ch].outputs)
+        time_output.append(channel_data[ch].output_times)
 
         vars_input.append(channel_data[ch].inputs)
         time_input.append(channel_data[ch].input_times)
@@ -71,20 +74,31 @@ def refresh_interface():
 
     root.after(REFRESH_PERIOD, refresh_interface)
 
+
 # periodic callback function to read and output to the DAQ I/O
 def refresh_io():
     for ch in range(NUM_CHANNELS):
+
+        # INPUTS
+
+        # get inputs from DAQ and store in channel data if not debugging
         if not debug_mode:
             sensor_val = channel_io[ch].analog_in()
             channel_data[ch].append_graph_inputs(sensor_val)
 
-        # start output sequence:
-        # ac_out will create a buffer of the signal waveform to push to the DAQ
-        # that will persist until next instance of refresh_io maybe
-        if channel_views[ch].controls_view.output_mode_state.get() == 'AC':
+        # OUTPUTS
+
+        output_mode = channel_views[ch].controls_view.output_mode_state.get()   # get the selected output mode
+        voltage = channel_data[ch].outputs[-1]  # grab latest voltage from the graph outputs
+
+        if output_mode == 'AC':
+            # start output sequence:
+            # ac_out will create a buffer of the signal waveform to push to the DAQ
+            # that will persist until next instance of refresh_io maybe
             frequency = channel_views[ch].controls_view.frequency_slider.get()
-            voltage = channel_views[ch].controls_view.voltage_slider.get()
             channel_io[ch].ac_out(voltage, frequency, debug_mode)
+        elif output_mode == 'DC':
+            channel_io[ch].dc_out(voltage, debug_mode)
 
     root.after(POLLING_PERIOD, refresh_io)
 
@@ -181,7 +195,7 @@ if __name__ == '__main__':
         channel_io.append(model.ChannelIO(i))
 
         channel_views[i].controls_view.output_mode_state.trace('w', partial(on_output_mode_change, i))
-        on_output_mode_change(i)    # make sure that the first initial state is configured
+        on_output_mode_change(i)  # make sure that the first initial state is configured
 
         channel_views[i].controls_view.voltage_slider.bind('<Button-1>',
                                                            lambda event, channel=i, widget='vs':
@@ -218,7 +232,8 @@ if __name__ == '__main__':
 
     ControlsPanel.grid(row=1, column=0)
 
-    refresh_io()
     refresh_interface()
+    refresh_io()
+
     root.protocol("WM_DELETE_WINDOW", sys.exit)
     root.mainloop()
