@@ -4,12 +4,12 @@
 # Constants for main
 
 # Number of channels to sample/display
-NUM_CHANNELS = 3
+NUM_CHANNELS = 1
 # Refresh rate for GUI display and slider sampling
 REFRESH_RATE = 24
 REFRESH_PERIOD = int(1000/REFRESH_RATE)     # in ms
 # Refresh rate for sensor sampling
-POLLING_RATE = 50
+POLLING_RATE = 20
 POLLING_PERIOD = int(1000/POLLING_RATE)     # in ms
 
 # Constants for model

@@ -123,11 +123,12 @@ class ChannelIO:
 
     def analog_in(self):
         # Same as above, change as needed
-        path = "Dev2/ai" + str(self.channel)
-        with nidaqmx.Task() as task:
-            task.ai_channels.add_ai_voltage_chan(path)
-            input = task.read()
-            print(input[0])
-            return input
+        # path = "Dev2/ai" + str(self.channel)
+        # with nidaqmx.Task() as task:
+        #     task.ai_channels.add_ai_voltage_chan(path)
+        #     input = task.read()
+        #     print(input[0])
+        #     return input
+        return 0
 
 
