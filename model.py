@@ -99,14 +99,14 @@ class ChannelIO:
         self.output_buffer = amplitude*np.sin(self.output_samples * w)
 
         if not debug:
-            task = nidaqmx.Task()
-            task.ao_channels.add_ao_voltage_chan('Dev1/ao' + str(self.channel))
-            task.timing.cfg_samp_clk_timing(rate=self.sampling_rate,
-                                            sample_mode=AcquisitionType.CONTINUOUS,
-                                            samps_per_chan=samples_per_signal)
-            analog_writer = nidaqmx.stream_writers.AnalogSingleChannelWriter(task.out_stream, auto_start=True)
-            analog_writer.write_many_sample(self.output_buffer)
-            task.wait_until_done()
+            with nidaqmx.Task() as task:
+                task.ao_channels.add_ao_voltage_chan('Dev1/ao' + str(self.channel))
+                task.timing.cfg_samp_clk_timing(rate=self.sampling_rate,
+                                                sample_mode=AcquisitionType.CONTINUOUS,
+                                                samps_per_chan=samples_per_signal)
+                analog_writer = nidaqmx.stream_writers.AnalogSingleChannelWriter(task.out_stream, auto_start=True)
+                analog_writer.write_many_sample(self.output_buffer)
+                # task.wait_until_done()
         # self.extend_graph_outputs()
 
     def extend_graph_outputs(self):
