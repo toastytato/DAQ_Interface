@@ -4,6 +4,7 @@ import model
 from constants import *
 import tkinter as tk
 from functools import partial
+from writer import SignalWriter
 
 # MAIN: the controller passing data from the view (UI) and model (Data)
 # Consists of:
@@ -25,7 +26,6 @@ active_tab = 0
 # default debug state is true because running the NI DAQ functions without
 # the devices connected crashes the program
 debug_mode = True
-
 
 # periodic callback function to refresh the graph animations
 def refresh_interface():
@@ -88,17 +88,28 @@ def refresh_io():
 
         # OUTPUTS
 
-        output_mode = channel_views[ch].controls_view.output_mode_state.get()   # get the selected output mode
+        output_mode = channel_views[ch].controls_view.output_mode_state.get()  # get the selected output mode
         voltage = channel_data[ch].outputs[-1]  # grab latest voltage from the graph outputs
 
-        if output_mode == 'AC':
-            # start output sequence:
-            # ac_out will create a buffer of the signal waveform to push to the DAQ
-            # that will persist until next instance of refresh_io maybe
+        #
+        if voltage == 0:
+            writer_thread.running = False
+        else:
+            if writer_thread.running is False:
+                try:
+                    writer_thread.start()
+                except RuntimeError:    # thread is already started
+                    writer_thread.restart()
+
+        # update the variables in writer with output parameters
+        if output_mode == 'AC' and active_channel:
             frequency = channel_views[ch].controls_view.frequency_slider.get()
-            channel_io[ch].ac_out(voltage, frequency, debug_mode)
-        elif output_mode == 'DC':
-            channel_io[ch].dc_out(voltage, debug_mode)
+            writer_thread.mode = 'AC'
+            writer_thread.freq = frequency
+            writer_thread.voltage = voltage
+        elif output_mode == 'DC' and active_channel:
+            writer_thread.mode = 'DC'
+            writer_thread.voltage = voltage
 
     root.after(POLLING_PERIOD, refresh_io)
 
@@ -169,6 +180,14 @@ def on_debug_mode_toggle(event):
         debug_view.status_label.configure(foreground="green")
 
 
+def on_exit():
+    if writer_thread.is_alive():
+        writer_thread.exit = True
+        writer_thread.restart()
+        writer_thread.join()
+    sys.exit()
+
+
 # initializations
 # create the UI elements
 # bind key/mouse presses to its assigned function
@@ -223,17 +242,16 @@ if __name__ == '__main__':
         channel_views[i].pack(side='left')
 
     debug_view.pack(side='left')
-
     joystick_view.pack()
     # SidePanel.grid(row=0, column=1, rowspan=2)
-
     graph_notebook.pack()
     GraphPanel.grid(row=0, column=0)
-
     ControlsPanel.grid(row=1, column=0)
+
+    writer_thread = SignalWriter()
 
     refresh_interface()
     refresh_io()
 
-    root.protocol("WM_DELETE_WINDOW", sys.exit)
+    root.protocol("WM_DELETE_WINDOW", on_exit)
     root.mainloop()

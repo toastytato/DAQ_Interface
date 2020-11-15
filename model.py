@@ -1,4 +1,5 @@
 from nidaqmx.constants import AcquisitionType
+from nidaqmx.stream_writers import AnalogSingleChannelWriter
 from constants import *
 import nidaqmx
 import numpy as np
@@ -63,13 +64,12 @@ class ChannelIO:
         self.time = time.time()
         self.time_prev = time.time()
 
-    def dc_out(self, voltage, debug):
+    def dc_out(self, voltage):
         path = "Dev1/ao" + str(self.channel)
         print(path)
-        if not debug:
-            with nidaqmx.Task() as task:
-                task.ao_channels.add_ao_voltage_chan(path)
-                print(task.write(voltage))
+        with nidaqmx.Task() as task:
+            task.ao_channels.add_ao_voltage_chan(path)
+            print(task.write(voltage))
 
     # generates a sin wave to output to the DAQ
     # continues the frequency with signals up till the polling period
@@ -98,14 +98,13 @@ class ChannelIO:
         self.output_samples = np.linspace(self.time, self.time + signal_time, num=samples_per_signal)
         self.output_buffer = amplitude*np.sin(self.output_samples * w)
 
-        if not debug:
-            with nidaqmx.Task() as task:
-                task.ao_channels.add_ao_voltage_chan('Dev1/ao' + str(self.channel))
-                task.timing.cfg_samp_clk_timing(rate=self.sampling_rate,
-                                                sample_mode=AcquisitionType.CONTINUOUS,
-                                                samps_per_chan=samples_per_signal)
-                analog_writer = nidaqmx.stream_writers.AnalogSingleChannelWriter(task.out_stream, auto_start=True)
-                analog_writer.write_many_sample(self.output_buffer)
+        with nidaqmx.Task() as task:
+            task.ao_channels.add_ao_voltage_chan('Dev1/ao' + str(self.channel))
+            task.timing.cfg_samp_clk_timing(rate=self.sampling_rate,
+                                            sample_mode=AcquisitionType.CONTINUOUS,
+                                            samps_per_chan=samples_per_signal)
+            analog_writer = nidaqmx.stream_writers.AnalogSingleChannelWriter(task.out_stream, auto_start=True)
+            analog_writer.write_many_sample(self.output_buffer)
                 # task.wait_until_done()
         # self.extend_graph_outputs()
 
@@ -130,5 +129,18 @@ class ChannelIO:
         #     print(input[0])
         #     return input
         return 0
+
+class WaveGenerator:
+    def __init__(self):
+        self.counter = 0
+        self.last_freq = 0
+
+    def generate_wave(self, voltage, frequency, samples_per_signal):
+        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
+        w = 2 * np.pi * frequency
+        time_of_signal = w / samples_per_signal  # how
+        output_samples = np.linspace(start=0, stop=time_of_signal, num=samples_per_signal)
+        output_buffer = amplitude * np.sin(output_samples * w)
+        return output_buffer
 
 
