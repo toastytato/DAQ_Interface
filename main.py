@@ -27,6 +27,7 @@ active_tab = 0
 # the devices connected crashes the program
 debug_mode = True
 
+
 # periodic callback function to refresh the graph animations
 def refresh_interface():
     # list for holding the points to plot for all channels
@@ -98,7 +99,7 @@ def refresh_io():
             if writer_thread.running is False:
                 try:
                     writer_thread.start()
-                except RuntimeError:    # thread is already started
+                except RuntimeError:  # thread is already started
                     writer_thread.restart()
 
         # update the variables in writer with output parameters

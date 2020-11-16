@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['main.py'],
-             pathex=['C:\\Users\\Jimmy Hsueh\\Documents\\UT Files\\Research\\DAQ_control'],
+             pathex=['C:\\Users\\jimmy\\Documents\\DAQ_Interface'],
              binaries=[],
              datas=[],
              hiddenimports=[],

@@ -53,7 +53,7 @@ class SignalWriter(Thread):
                 continue
 
             # Add input channels
-            for i in NUM_CHANNELS:
+            for i in range(NUM_CHANNELS):
                 channel_string = self.funcg_name + '/' + f'ao{i}'
                 try:
                     self.task.ao_channels.add_ao_voltage_chan(channel_string)
