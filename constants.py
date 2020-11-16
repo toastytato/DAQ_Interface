@@ -9,7 +9,7 @@ NUM_CHANNELS = 1
 REFRESH_RATE = 24
 REFRESH_PERIOD = int(1000/REFRESH_RATE)     # in ms
 # Refresh rate for sensor sampling
-POLLING_RATE = 20
+POLLING_RATE = 10
 POLLING_PERIOD = int(1000/POLLING_RATE)     # in ms
 
 # Constants for model
