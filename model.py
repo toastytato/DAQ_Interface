@@ -6,6 +6,7 @@ import numpy as np
 import time
 import math
 
+
 # MODEL: handles backend of the program
 # contains data containers as well as helper functions for output to DAQ
 
@@ -21,16 +22,18 @@ def verify_input(input, min, max):
     else:
         return input
 
+
 def voltage_to_current(volt):
-    return volt/CURRENT_SHUNT_RESISTANCE
+    return volt / CURRENT_SHUNT_RESISTANCE
+
 
 # Holds the data for plotting to the graph
 class ChannelInterfaceData:
     def __init__(self):
         self.time_init = time.time()
-        self.inputs = []   # values from input
+        self.inputs = []  # values from input
         self.input_times = []  # time counter
-        self.outputs = []   # setpoint values
+        self.outputs = []  # setpoint values
         self.output_times = []
 
     def append_graph_inputs(self, sensor_val):
@@ -48,6 +51,7 @@ class ChannelInterfaceData:
         while self.output_times[-1] - self.output_times[0] >= TIME_WINDOW:
             self.output_times.pop(0)
             self.outputs.pop(0)
+
 
 # Handles the input and output to the DAQ for each channel
 class ChannelIO:
@@ -77,12 +81,12 @@ class ChannelIO:
     # this should create a continuous variable frequency signal
     def ac_out(self, voltage, frequency, debug):
         try:
-            signal_time = (1/POLLING_RATE) * 1.5    # 1/frequency  # period of the sin wave
+            signal_time = (1 / POLLING_RATE) * 1.5  # 1/frequency  # period of the sin wave
         except ZeroDivisionError:
             signal_time = 0
 
         if signal_time < 1:
-            samples_per_signal = int(signal_time * self.sampling_rate)   # number of signals in buffer
+            samples_per_signal = int(signal_time * self.sampling_rate)  # number of signals in buffer
         else:
             samples_per_signal = self.sampling_rate  # preventing excess samples in buffer when frequency is low
         # try:
@@ -96,7 +100,7 @@ class ChannelIO:
         self.time = time.time() - self.time_prev
         # print(self.time)
         self.output_samples = np.linspace(self.time, self.time + signal_time, num=samples_per_signal)
-        self.output_buffer = amplitude*np.sin(self.output_samples * w)
+        self.output_buffer = amplitude * np.sin(self.output_samples * w)
 
         with nidaqmx.Task() as task:
             task.ao_channels.add_ao_voltage_chan('Dev1/ao' + str(self.channel))
@@ -105,7 +109,7 @@ class ChannelIO:
                                             samps_per_chan=samples_per_signal)
             analog_writer = nidaqmx.stream_writers.AnalogSingleChannelWriter(task.out_stream, auto_start=True)
             analog_writer.write_many_sample(self.output_buffer)
-                # task.wait_until_done()
+            # task.wait_until_done()
         # self.extend_graph_outputs()
 
     def extend_graph_outputs(self):
@@ -130,6 +134,7 @@ class ChannelIO:
         #     return input
         return 0
 
+
 class WaveGenerator:
     def __init__(self):
         self.counter = 0
@@ -142,5 +147,3 @@ class WaveGenerator:
         output_samples = np.linspace(start=0, stop=time_of_signal, num=samples_per_signal)
         output_buffer = amplitude * np.sin(output_samples * w)
         return output_buffer
-
-
