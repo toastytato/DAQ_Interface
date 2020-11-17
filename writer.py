@@ -78,9 +78,13 @@ class SignalWriter(Thread):
             self.task.out_stream.output_buf_size = 2 * self.write_chunk_size
 
             # Register the listening method to add more data
-            self.task.register_every_n_samples_transferred_from_buffer_event(
-                sample_interval=self.write_chunk_size,
-                callback_method=self.add_more_data)
+            try:
+                self.task.register_every_n_samples_transferred_from_buffer_event(
+                    sample_interval=self.write_chunk_size,
+                    callback_method=self.add_more_data)
+            except:
+                print("Problem with callback method")
+                continue
 
             # Initialize the writer
             self.writer = AnalogMultiChannelWriter(self.task.out_stream)
@@ -89,7 +93,8 @@ class SignalWriter(Thread):
 
             # Write the first set of data into the output buffer
             try:
-                self.writer.write_many_sample(data=self.output)  # Write two chunks of beginning data to avoid interruption
+                # Write two chunks of beginning data to avoid interruption
+                self.writer.write_many_sample(data=self.output)
             except:
                 print("Could not write to channel")
                 continue
