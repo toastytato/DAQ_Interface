@@ -82,8 +82,9 @@ class SignalWriter(Thread):
                 self.task.register_every_n_samples_transferred_from_buffer_event(
                     sample_interval=self.write_chunk_size,
                     callback_method=self.add_more_data)
-            except:
+            except Exception as e:
                 print("Problem with callback method")
+                print(e)
                 continue
 
             # Initialize the writer
