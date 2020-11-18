@@ -48,7 +48,7 @@ class SignalWriter(Thread):
             print("Signal Writer Run")
 
             try:
-                self.task = nidaqmx.Task(f"Write Task <{self.task_counter}>")  # Start the task
+                self.task = nidaqmx.Task(f"Write Task {self.task_counter}")  # Start the task
             except OSError:
                 print("DAQ is not connected")
                 continue
