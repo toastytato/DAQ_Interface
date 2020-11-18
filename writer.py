@@ -11,6 +11,7 @@ class SignalWriter(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.writer = None
+        self.task_counter = 0
 
         self.running = False
         self.exit = False
@@ -47,7 +48,7 @@ class SignalWriter(Thread):
             print("Signal Writer Run")
 
             try:
-                self.task = nidaqmx.Task()  # Start the task
+                self.task = nidaqmx.Task(f"Write Task #{self.task_counter}")  # Start the task
             except OSError:
                 print("DAQ is not connected")
                 continue
@@ -56,7 +57,7 @@ class SignalWriter(Thread):
             for i in range(NUM_CHANNELS):
                 channel_string = self.funcg_name + '/' + f'ao{i}'
                 try:
-                    print("Channel ", channel_string, " added to task")
+                    print("Channel ", channel_string, " added to task ", self.task.name)
                     self.task.ao_channels.add_ao_voltage_chan(channel_string)
                 except Exception as e:
                     if i == 0:
@@ -69,6 +70,8 @@ class SignalWriter(Thread):
                 self.task.write(self.voltage)
                 print("DC write finished")
                 continue
+
+            print(self.task.channel_names)
 
             # Set the generation rate, and buffer size.
             self.task.timing.cfg_samp_clk_timing(
