@@ -1,23 +1,23 @@
 import nidaqmx
 from nidaqmx.stream_writers import AnalogMultiChannelWriter
-from nidaqmx.constants import AcquisitionType
+from nidaqmx.constants import AcquisitionType, RegenerationMode
 from constants import *
 import numpy as np
 from model import WaveGenerator
 from threading import Thread, Event
 
+
 class SignalWriter(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.writer = None
-        self.task = None
 
         self.running = False
         self.exit = False
         self.start_signal = Event()
         self.funcg_name = 'Dev1'
         self.signals_per_sec = 8000  # signals per second
-        self.write_chunk_size = self.signals_per_sec // 10    # size of chunk to write (nearest floor integer)
+        self.write_chunk_size = self.signals_per_sec // 10  # size of chunk to write (nearest floor integer)
         self.WaveGen = [WaveGenerator()] * NUM_CHANNELS
         self.output = np.empty(NUM_CHANNELS)
 
@@ -56,10 +56,12 @@ class SignalWriter(Thread):
             for i in range(NUM_CHANNELS):
                 channel_string = self.funcg_name + '/' + f'ao{i}'
                 try:
+                    print("Channel ", channel_string, " added to task")
                     self.task.ao_channels.add_ao_voltage_chan(channel_string)
                 except Exception as e:
                     if i == 0:
-                        print('Could not open write channels')
+                        print('Could not open write channels:')
+                        print(e)
                         continue
 
             if self.mode == 'DC':
@@ -74,16 +76,16 @@ class SignalWriter(Thread):
                 sample_mode=AcquisitionType.CONTINUOUS)
 
             # Set more properties for continuous signal modulation
-            self.task.out_stream.regen_mode = nidaqmx.constants.RegenerationMode.DONT_ALLOW_REGENERATION
+            self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
             self.task.out_stream.output_buf_size = 2 * self.write_chunk_size
 
             # Register the listening method to add more data
             try:
                 self.task.register_every_n_samples_transferred_from_buffer_event(
                     sample_interval=self.write_chunk_size,
-                    callback_method=self.add_more_data)
+                    callback_method=self.callback)
             except Exception as e:
-                print("Problem with callback method")
+                print("Problem with callback method:")
                 print(e)
                 continue
 
@@ -96,8 +98,9 @@ class SignalWriter(Thread):
             try:
                 # Write two chunks of beginning data to avoid interruption
                 self.writer.write_many_sample(data=self.output)
-            except:
-                print("Could not write to channel")
+            except Exception as e:
+                print("Could not write to channel:")
+                print(e)
                 continue
 
             self.writer.write_many_sample(data=self.output)
@@ -106,7 +109,7 @@ class SignalWriter(Thread):
 
     # called by the task listener method
     # won't get called when DAQ is not attached
-    def add_more_data(self, task_handle, every_n_samples_event_type, number_of_samples, callback_data):
+    def callback(self, task_handle, every_n_samples_event_type, number_of_samples, callback_data):
         if self.running:
             self.output = self.package_waves(self.voltage, self.freq, self.write_chunk_size)
             self.writer.write_many_sample(self.output)
@@ -122,6 +125,3 @@ class SignalWriter(Thread):
         for ch in range(NUM_CHANNELS):
             output[ch] = self.WaveGen[ch].generate_wave(volt, freq, chunk_size)
         return output
-
-
-        
