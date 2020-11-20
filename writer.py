@@ -13,10 +13,10 @@ class SignalWriter(Thread):
         self.writer = None
         self.task_counter = 0
 
-        self.running = False
+        self.is_running = False
         self.exit = False
         self.start_signal = Event()
-        self.funcg_name = 'Dev1'
+        self.daq_out_name = 'Dev1'
         self.signals_per_sec = 8000  # signals per second
         self.write_chunk_size = self.signals_per_sec // 10  # size of chunk to write (nearest floor integer)
         self.WaveGen = [WaveGenerator()] * NUM_CHANNELS
@@ -25,6 +25,53 @@ class SignalWriter(Thread):
         self.voltage = 0
         self.freq = 0
         self.mode = 'AC'
+
+    # ---- DAQ Control method 2 based on tenss_Python_DAQ_examples
+
+    def create_task(self):
+        self.task = nidaqmx.Task()
+
+        connect_at = "%s/ao0" % self.daq_out_name
+        self.task.ao_channels.add_ao_voltage_chan(connect_at)
+
+        buffer_length = self.write_chunk_size * 4
+        self.task.timing.cfg_samp_clk_timing(rate=self.signals_per_sec,
+                                             samps_per_chan=buffer_length,
+                                             sample_mode=AcquisitionType.CONTINUOUS)
+
+        self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
+        print('Regeneration mode is set to: %s' % str(self.task.out_stream.regen_mode))
+
+        self.task.write(self.WaveGen[0].generate_wave(self.voltage, self.freq, self.write_chunk_size))
+
+    def start_signal(self):
+        if not self._task_created():
+            return
+
+        self.is_running = True
+        self.task.start()
+
+    def stop_signal(self):
+        if not self._task_created():
+            return
+
+        self.is_running = False
+        self.task.stop()
+
+        # House-keeping methods follow
+
+    def _task_created(self):
+        """
+        Return True if a task has been created
+        """
+
+        if isinstance(self.task, nidaqmx.task.Task):
+            return True
+        else:
+            print('No task created: run the create_task method')
+            return False
+
+    # ---- DAQ Control method 1 based on MuControl ----
 
     # tells thread to stop blocking and restart
     def restart(self):
@@ -43,19 +90,20 @@ class SignalWriter(Thread):
                 return
 
             # flag for starting or ending nidaqmx.Task() object
-            self.running = True
+            self.is_running = True
 
             print("Signal Writer Run")
 
             try:
-                self.task = nidaqmx.Task(f"Write Task {self.task_counter}")  # Start the task
+                self.task = nidaqmx.Task()  # Start the task
+                self.task_counter += 1
             except OSError:
                 print("DAQ is not connected")
                 continue
 
             # Add input channels
             for i in range(NUM_CHANNELS):
-                channel_string = self.funcg_name + '/' + f'ao{i}'
+                channel_string = self.daq_out_name + '/' + f'ao{i}'
                 try:
                     print("Channel ", channel_string, " added to task ", self.task.name)
                     self.task.ao_channels.add_ao_voltage_chan(channel_string)
@@ -71,7 +119,7 @@ class SignalWriter(Thread):
                 print("DC write finished")
                 continue
 
-            print("Channel names: " , self.task.channel_names)
+            print("Channel names: ", self.task.channel_names)
 
             # Set the generation rate, and buffer size.
             self.task.timing.cfg_samp_clk_timing(
@@ -113,7 +161,7 @@ class SignalWriter(Thread):
     # called by the task listener method
     # won't get called when DAQ is not attached
     def callback(self, task_handle, every_n_samples_event_type, number_of_samples, callback_data):
-        if self.running:
+        if self.is_running:
             self.output = self.package_waves(self.voltage, self.freq, self.write_chunk_size)
             self.writer.write_many_sample(self.output)
         else:
@@ -124,7 +172,7 @@ class SignalWriter(Thread):
 
     # puts all waves into a single array for AnalogMultiChannelWriter
     def package_waves(self, volt, freq, chunk_size):
-        output = np.empty(NUM_CHANNELS)
+        output = np.empty(shape=(NUM_CHANNELS, chunk_size))
         for ch in range(NUM_CHANNELS):
             output[ch] = self.WaveGen[ch].generate_wave(volt, freq, chunk_size)
         return output
