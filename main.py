@@ -92,21 +92,23 @@ def refresh_io():
         output_mode = channel_views[ch].controls_view.output_mode_state.get()  # get the selected output mode
         voltage = channel_data[ch].outputs[-1]  # grab latest voltage from the graph outputs
 
-        # #
-        # if voltage == 0:
-        #     writer_thread.running = False
-        # else:
-        #     if writer_thread.running is False:
-        #         try:
-        #             writer_thread.start()
-        #         except RuntimeError:  # thread is already started
-        #             writer_thread.restart()
-
         if voltage == 0:
-            writer_thread.stop_signal()
+            writer_thread.running = False
         else:
-            if writer_thread.is_running is False:
-                writer_thread.create_task()
+            if writer_thread.running is False:
+                try:
+                    writer_thread.start()
+                except RuntimeError:  # thread is already started
+                    writer_thread.restart()
+
+        # if voltage == 0:
+        #     if writer_thread.is_running is True:
+        #         writer_thread.stop_signal()
+        # else:
+        #     if writer_thread.task_created() is False:
+        #         writer_thread.create_task()
+        #     if writer_thread.is_running is False:
+        #         writer_thread.start_signal()
 
         # update the variables in writer with output parameters
         if output_mode == 'AC' and active_channel:

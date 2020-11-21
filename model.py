@@ -133,17 +133,3 @@ class ChannelIO:
         #     print(input[0])
         #     return input
         return 0
-
-
-class WaveGenerator:
-    def __init__(self):
-        self.counter = 0
-        self.last_freq = 0
-
-    def generate_wave(self, voltage, frequency, samples_per_signal):
-        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
-        w = 2 * np.pi * frequency
-        time_of_signal = w / samples_per_signal  # how
-        output_samples = np.linspace(start=0, stop=time_of_signal, num=samples_per_signal)
-        output_buffer = amplitude * np.sin(output_samples * w)
-        return output_buffer

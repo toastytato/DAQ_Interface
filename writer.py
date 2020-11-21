@@ -3,7 +3,6 @@ from nidaqmx.stream_writers import AnalogMultiChannelWriter
 from nidaqmx.constants import AcquisitionType, RegenerationMode
 from constants import *
 import numpy as np
-from model import WaveGenerator
 from threading import Thread, Event
 
 
@@ -15,7 +14,7 @@ class SignalWriter(Thread):
 
         self.is_running = False
         self.exit = False
-        self.start_signal = Event()
+        self.start_thread_flag = Event()
         self.daq_out_name = 'Dev1'
         self.signals_per_sec = 8000  # signals per second
         self.write_chunk_size = self.signals_per_sec // 10  # size of chunk to write (nearest floor integer)
@@ -25,13 +24,18 @@ class SignalWriter(Thread):
         self.voltage = 0
         self.freq = 0
         self.mode = 'AC'
+        self.task = []
 
     # ---- DAQ Control method 2 based on tenss_Python_DAQ_examples
 
     def create_task(self):
-        self.task = nidaqmx.Task()
+        try:
+            self.task = nidaqmx.Task()
+        except OSError:
+            print("DAQ is not connected, task could not be created")
+            return
 
-        connect_at = "%s/ao0" % self.daq_out_name
+        connect_at = self.daq_out_name + "/ao0"
         self.task.ao_channels.add_ao_voltage_chan(connect_at)
 
         buffer_length = self.write_chunk_size * 4
@@ -39,20 +43,22 @@ class SignalWriter(Thread):
                                              samps_per_chan=buffer_length,
                                              sample_mode=AcquisitionType.CONTINUOUS)
 
-        self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
-        print('Regeneration mode is set to: %s' % str(self.task.out_stream.regen_mode))
+        self.task.out_stream.regen_mode = RegenerationMode.ALLOW_REGENERATION
+        print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
-        self.task.write(self.WaveGen[0].generate_wave(self.voltage, self.freq, self.write_chunk_size))
+        print("Voltage is: %d, Frequency is: %d" % (self.voltage, self.freq))
+        output = self.WaveGen[0].generate_wave(self.voltage, self.freq, self.write_chunk_size)
+        self.task.write(output)
 
     def start_signal(self):
-        if not self._task_created():
+        if not self.task_created():
             return
 
         self.is_running = True
         self.task.start()
 
     def stop_signal(self):
-        if not self._task_created():
+        if not self.task_created():
             return
 
         self.is_running = False
@@ -60,7 +66,7 @@ class SignalWriter(Thread):
 
         # House-keeping methods follow
 
-    def _task_created(self):
+    def task_created(self):
         """
         Return True if a task has been created
         """
@@ -75,7 +81,7 @@ class SignalWriter(Thread):
 
     # tells thread to stop blocking and restart
     def restart(self):
-        self.start_signal.set()
+        self.start_thread_flag.set()
 
     # basically a one time call to start the write task
     def run(self):
@@ -83,8 +89,8 @@ class SignalWriter(Thread):
         self.restart()
         # keep thread running
         while True:
-            self.start_signal.wait()
-            self.start_signal.clear()
+            self.start_thread_flag.wait()
+            self.start_thread_flag.clear()
             # checks flag for exiting thread
             if self.exit is True:
                 return
@@ -98,7 +104,7 @@ class SignalWriter(Thread):
                 self.task = nidaqmx.Task()  # Start the task
                 self.task_counter += 1
             except OSError:
-                print("DAQ is not connected")
+                print("DAQ is not connected, task could not be created")
                 continue
 
             # Add input channels
@@ -176,3 +182,31 @@ class SignalWriter(Thread):
         for ch in range(NUM_CHANNELS):
             output[ch] = self.WaveGen[ch].generate_wave(volt, freq, chunk_size)
         return output
+
+
+class WaveGenerator:
+    def __init__(self):
+        self.counter = 0
+        self.last_freq = 0
+
+    def generate_wave(self, voltage, frequency, samples_per_signal):
+        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
+        w = 2 * np.pi * frequency
+        time_of_signal = w / samples_per_signal  # how
+        output_samples = np.linspace(start=0, stop=time_of_signal, num=samples_per_signal)
+        output_buffer = amplitude * np.sin(output_samples * w)
+        return output_buffer
+
+
+if __name__ == '__main__':
+    print('\nRunning demo for SignalWriter\n')
+    writer = SignalWriter()
+
+    writer.voltage = 5
+    writer.freq = 60
+    writer.mode = 'AC'
+
+    writer.create_task()
+    writer.start_signal()
+    input("Press return to stop")
+    writer.stop_signal()
