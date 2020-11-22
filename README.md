@@ -24,4 +24,4 @@ Project: Python DAQmx examples <br/>
 Link: https://github.com/tenss/Python_DAQmx_examples/blob/master/LICENSE
 
 ## License
-GNU Public License
+[GNU Public License v3](https://www.gnu.org/licenses/gpl-3.0.html)
