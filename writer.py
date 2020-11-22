@@ -219,7 +219,7 @@ class WaveGenerator:
         waves_per_chunk = frequency / chunks_per_sec
         start_fraction = waves_per_chunk % 1    # shift the frequency if starting in the middle of a wave
 
-        freq_shifter = self.counter * (2 * np.pi * start_fraction)
+        freq_shifter = self.counter * (2 * np.pi + start_fraction)
 
         # create an array with samples_per_signal
         # min is 0, max is rad_per_chunk
