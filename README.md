@@ -7,3 +7,12 @@ GUI for controlling NI DAQ devices and monitoring output/input voltages, current
 
 ## Usage
 Change the slider values to change output to DAQ hardware. Currently still debugging so some of the features are not present yet
+
+##Credits
+This application uses Open Source components. You can find their source code below:
+
+Project: MuControl <br/>
+Link: https://github.com/czimm79/MuControl-release/blob/master/LICENSE.txt
+
+Project: Python DAQmx examples <br/>
+Link: https://github.com/tenss/Python_DAQmx_examples/blob/master/LICENSE
