@@ -16,8 +16,8 @@ class SignalWriter(Thread):
         self.exit = False
         self.start_thread_flag = Event()
         self.daq_out_name = 'Dev1'
-        self.signal_rate = 44100  # signals per second
-        self.chunks_per_second = 10
+        self.signal_rate = 8000  # signals per second
+        self.chunks_per_second = 1
         self.write_chunk_size = self.signal_rate // self.chunks_per_second
         # size of chunk to write (nearest floor integer)
         self.WaveGen = [WaveGenerator()] * NUM_CHANNELS
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     writer = SignalWriter()
 
     writer.voltage = 5
-    writer.freq = 10
+    writer.freq = 2
     writer.mode = 'AC'
 
     writer.create_task()
