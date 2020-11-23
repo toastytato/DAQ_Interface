@@ -16,7 +16,7 @@ class SignalWriter(Thread):
         self.exit = False
         self.start_thread_flag = Event()
         self.daq_out_name = 'Dev1'
-        self.signal_rate = 16000  # signals per second
+        self.signal_rate = 44100  # signals per second
         self.chunks_per_second = 10
         self.write_chunk_size = self.signal_rate // self.chunks_per_second
         # size of chunk to write (nearest floor integer)
@@ -226,7 +226,7 @@ class WaveGenerator:
         # the task will write at signal_rate
         #
         output_samples = np.linspace(start=0, stop=rad_per_chunk, num=samples_per_chunk)
-        output_buffer = amplitude * np.sin(output_samples * rad_per_second + freq_shifter)
+        output_buffer = amplitude * np.sin(output_samples * rad_per_second)
         return output_buffer
 
 
