@@ -16,7 +16,7 @@ class SignalWriter(Thread):
         self.exit = False
         self.start_thread_flag = Event()
         self.daq_out_name = 'Dev1'
-        self.signal_rate = 8000  # signals per second
+        self.signal_rate = 16000  # signals per second
         self.chunks_per_second = 10
         self.write_chunk_size = self.signal_rate // self.chunks_per_second
         # size of chunk to write (nearest floor integer)
@@ -48,7 +48,7 @@ class SignalWriter(Thread):
         self.task.out_stream.regen_mode = RegenerationMode.ALLOW_REGENERATION
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
-        print("Voltage is: %d, Frequency is: %d" % (self.voltage, self.freq))
+        print("Voltage is: %d, Frequency is: %d Hz" % (self.voltage, self.freq))
         output = self.WaveGen[0].generate_wave(self.voltage,
                                                self.freq,
                                                self.signal_rate,
