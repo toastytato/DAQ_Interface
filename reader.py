@@ -45,6 +45,8 @@ class SignalReader(Thread):
                         reader.read_many_sample(data=self.input,
                                                 number_of_samples_per_channel=self.read_chunk_size)
                         # self.plotter.update_plot(self.input)
+                        plt.plot(self.input)
+                        plt.show()
                     except Exception as e:
                         print(e)
                         return
