@@ -18,7 +18,7 @@ class SignalReader(Thread):
 
         self.sample_rate = 1000
         self.read_chunk_size = 500
-        self.input = np.empty(self.read_chunk_size)
+        self.input = np.empty(shape=(1, self.read_chunk_size))
 
         # self.plotter = myplot.SignalPlot()
 
