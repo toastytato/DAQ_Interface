@@ -53,7 +53,9 @@ class SignalReader(Thread):
                 print(self.input)
             except Exception as e:
                 print(e)
-                return
+                break
+
+        task.close()
 
 def find_ni_devices():
     system = System.local()
