@@ -12,7 +12,7 @@ class SignalReader(Thread):
         Thread.__init__(self)
         self.reader = None
         self.is_running = False
-        self.daq_in_name = 'Dev2'
+        self.daq_in_name = 'Dev0'
 
         self.sample_rate = 1000
         self.read_chunk_size = 500
@@ -27,8 +27,9 @@ class SignalReader(Thread):
                 try:
                     task.ai_channels.add_ai_voltage_chan(channel_name)
                 except Exception as e:
-                    print("Couldn't connect DAQ in device")
+                    print("DAQ is not connected, task could not be created")
                     print(e)
+                    return
 
                 task.timing.cfg_samp_clk_timing(rate=self.sample_rate,
                                                 sample_mode=AcquisitionType.CONTINUOUS)
