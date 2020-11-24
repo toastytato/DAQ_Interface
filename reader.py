@@ -20,7 +20,7 @@ class SignalReader(Thread):
         self.read_chunk_size = 500
         self.input = np.empty(self.read_chunk_size)
 
-        self.plotter = myplot.SignalPlot()
+        # self.plotter = myplot.SignalPlot()
 
     def run(self):
         self.is_running = True
@@ -44,7 +44,7 @@ class SignalReader(Thread):
                     try:
                         reader.read_many_sample(data=self.input,
                                                 number_of_samples_per_channel=self.read_chunk_size)
-                        self.plotter.update_plot(self.input)
+                        # self.plotter.update_plot(self.input)
                     except Exception as e:
                         print(e)
                         continue
