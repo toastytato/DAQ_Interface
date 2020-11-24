@@ -47,7 +47,7 @@ class SignalReader(Thread):
                         # self.plotter.update_plot(self.input)
                     except Exception as e:
                         print(e)
-                        continue
+                        return
 
         except OSError:
             print("DAQ not connected, could not create task")
