@@ -18,6 +18,7 @@ class SignalReader(Thread):
 
         self.sample_rate = 1000
         self.read_chunk_size = 500
+        self.counter = 0
         self.input = np.empty(shape=(1, self.read_chunk_size))
 
         # self.plotter = myplot.SignalPlot()
@@ -41,13 +42,14 @@ class SignalReader(Thread):
                 task.close()
                 task.start()
 
-                while self.is_running:
+                while self.is_running and self.counter < 10:
                     try:
                         reader.read_many_sample(data=self.input,
                                                 number_of_samples_per_channel=self.read_chunk_size)
                         # self.plotter.update_plot(self.input)
                         plt.plot(self.input)
                         plt.show()
+                        self.counter += 1
                     except Exception as e:
                         print(e)
                         return
