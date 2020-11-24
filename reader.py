@@ -16,8 +16,8 @@ class SignalReader(Thread):
         self.is_running = False
         self.daq_in_name = 'Dev2'
 
-        self.sample_rate = 1000
-        self.read_chunk_size = 500
+        self.sample_rate = 10
+        self.read_chunk_size = 20
         self.input = np.empty(shape=(1, self.read_chunk_size))
 
         # self.plotter = myplot.SignalPlot()
