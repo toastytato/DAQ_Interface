@@ -18,13 +18,13 @@ class SignalReader(Thread):
 
         self.sample_rate = 1000
         self.read_chunk_size = 500
-        self.counter = 0
         self.input = np.empty(shape=(1, self.read_chunk_size))
 
         # self.plotter = myplot.SignalPlot()
 
     def run(self):
         self.is_running = True
+
         try:
             with nidaqmx.Task() as task:
                 channel_name = self.daq_in_name + "/ai0"
@@ -39,17 +39,15 @@ class SignalReader(Thread):
                                                 sample_mode=AcquisitionType.CONTINUOUS)
 
                 reader = AnalogMultiChannelReader(task.in_stream)
-                task.close()
                 task.start()
 
-                while self.is_running and self.counter < 10:
+                while self.is_running:
                     try:
                         reader.read_many_sample(data=self.input,
                                                 number_of_samples_per_channel=self.read_chunk_size)
                         # self.plotter.update_plot(self.input)
                         plt.plot(self.input)
                         plt.show()
-                        self.counter += 1
                     except Exception as e:
                         print(e)
                         return
@@ -71,8 +69,10 @@ def find_ni_devices():
 
 if __name__ == '__main__':
     print('\nRunning demo for SignalReader\n')
-    print(find_ni_devices())
-    reader = SignalReader()
-    reader.run()
+    # print(find_ni_devices())
+    reader_thread = SignalReader()
+    reader_thread.start()
     input("Press return to stop")
+    reader_thread.is_running = False
+    print("\nTask done")
 
