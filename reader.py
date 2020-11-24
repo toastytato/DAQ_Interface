@@ -38,6 +38,7 @@ class SignalReader(Thread):
                                                 sample_mode=AcquisitionType.CONTINUOUS)
 
                 reader = AnalogMultiChannelReader(task.in_stream)
+                task.close()
                 task.start()
 
                 while self.is_running:
