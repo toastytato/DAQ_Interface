@@ -6,8 +6,6 @@ import numpy as np
 from threading import Thread, Event
 import matplotlib.pyplot as plt
 
-from basic_units import radians
-
 class SignalWriter(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -54,10 +52,10 @@ class SignalWriter(Thread):
         #                                          self.frequency,
         #                                          self.signal_rate,
         #                                          self.write_chunk_size)
-        waveform = self.WaveGen[0].generate_one_period(self.voltage,
-                                                       self.frequency,
-                                                       self.signal_rate,
-                                                       num_periods=2)
+        waveform = self.WaveGen[0].generate_n_periods(self.voltage,
+                                                      self.frequency,
+                                                      self.signal_rate,
+                                                      n=2)
         self.task.write(data=waveform)
         self.task.write(data=waveform)
 
@@ -194,25 +192,25 @@ class WaveGenerator:
         self.last_freq = 0
         self.output_times = []
 
-    def generate_one_period(self, voltage, frequency, sample_rate, num_periods=1):
+    def generate_n_periods(self, voltage, frequency, sample_rate, n=1):
         amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
 
         rad_per_sec = 2 * np.pi * frequency
         samples_per_period = int(sample_rate / rad_per_sec)
 
         self.output_times = np.linspace(start=0,
-                                        stop=num_periods / frequency,
-                                        num=samples_per_period * num_periods)
-        output_buffer = amplitude * np.sin(self.output_times * rad_per_sec)
-        return output_buffer
+                                        stop=n / frequency,
+                                        num=samples_per_period * n)
+        output_waveform = amplitude * np.sin(self.output_times * rad_per_sec)
+        return output_waveform
 
     def generate_wave(self, voltage, frequency, sample_rate, samples_per_chunk):
         """
 
         :param voltage: RMS voltage, which will be converted to amplitude in signal
-        :param frequency: frequency of signal in Hz
-        :param sample_rate: # of signals per second
-        :param samples_per_chunk: # of samples that will be written in this output buffer
+        :param frequency: Determines if AC or DC. Frequency of signal in Hz if not 0, creates DC signal if frequency is 0
+        :param sample_rate: # of data points per second
+        :param samples_per_chunk: # of data points that will be written in this output buffer
         :return: np.array with waveform of input params
 
         """
@@ -223,19 +221,20 @@ class WaveGenerator:
             self.counter += 1
 
         amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
-        # frequency = waves_per_second
-        rad_per_sec = 2 * np.pi * frequency     # freq = 1, rad = 2pi
+        # waves_per_sec = frequency
+        rad_per_sec = 2 * np.pi * frequency
         chunks_per_sec = sample_rate / samples_per_chunk
-        rad_per_chunk = rad_per_sec / chunks_per_sec
-        sec_per_chunk = rad_per_chunk / rad_per_sec
+        sec_per_chunk = 1 / chunks_per_sec
         waves_per_chunk = frequency / chunks_per_sec
-        start_fraction = waves_per_chunk % 1    # shift the frequency if starting in the middle of a wave
 
+        # shift the frequency if starting in the middle of a wave
+        start_fraction = waves_per_chunk % 1
         freq_shifter = self.counter * 2 * np.pi * start_fraction
 
         self.output_times = np.linspace(start=0, stop=sec_per_chunk, num=samples_per_chunk)
-        output_buffer = amplitude * np.sin(self.output_times * rad_per_sec + freq_shifter)
-        return output_buffer
+        output_waveform = amplitude * np.sin(self.output_times * rad_per_sec + freq_shifter)
+
+        return output_waveform
 
 
 if __name__ == '__main__':
@@ -243,7 +242,7 @@ if __name__ == '__main__':
     writer = SignalWriter()
 
     writer.voltage = 5
-    writer.frequency = 10
+    writer.frequency = 4
     writer.mode = 'AC'
 
     writer.create_task()
