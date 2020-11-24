@@ -241,15 +241,15 @@ if __name__ == '__main__':
     writer.frequency = 1.3
     writer.mode = 'AC'
 
-    # writer.create_task()
-    # writer.start_signal()
-    wave_gen = WaveGenerator()
-    waveform = wave_gen.generate_wave(voltage=writer.voltage,
-                                      frequency=writer.frequency,
-                                      sample_rate=writer.signal_rate,
-                                      samples_per_chunk=writer.signal_rate // 4)
-    plt.plot(wave_gen.output_times, waveform)
-    plt.show()
+    writer.create_task()
+    writer.start_signal()
+    # wave_gen = WaveGenerator()
+    # waveform = wave_gen.generate_wave(voltage=writer.voltage,
+    #                                   frequency=writer.frequency,
+    #                                   sample_rate=writer.signal_rate,
+    #                                   samples_per_chunk=writer.signal_rate // 4)
+    # plt.plot(wave_gen.output_times, waveform)
+    # plt.show()
 
     input("Press return to stop")
     writer.stop_signal()

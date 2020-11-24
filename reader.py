@@ -1,6 +1,7 @@
 import nidaqmx
 from nidaqmx.stream_readers import AnalogMultiChannelReader
 from nidaqmx.constants import AcquisitionType, RegenerationMode
+from nidaqmx.system import System
 from constants import *
 import numpy as np
 from threading import Thread, Event
@@ -28,7 +29,6 @@ class SignalReader(Thread):
                     task.ai_channels.add_ai_voltage_chan(channel_name)
                 except Exception as e:
                     print("DAQ is not connected, task could not be created")
-                    print(e)
                     return
 
                 task.timing.cfg_samp_clk_timing(rate=self.sample_rate,
@@ -51,8 +51,21 @@ class SignalReader(Thread):
             print("DAQ not connected, could not create task")
             return
 
+def find_ni_devices():
+    system = System.local()
+    dev_name_list = []
+    for device in system.devices:
+        assert device is not None
+        # device looks like "Device(name=cDAQ1Mod1)"
+        dev_name = str(device).replace(')', '').split('=')[1]
+        dev_name_list.append(dev_name)
+    return str(dev_name_list)
+
 
 if __name__ == '__main__':
     print('\nRunning demo for SignalReader\n')
+    print(find_ni_devices())
     reader = SignalReader()
     reader.run()
+    input("Press return to stop")
+
