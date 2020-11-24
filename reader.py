@@ -26,35 +26,34 @@ class SignalReader(Thread):
         self.is_running = True
 
         try:
-            with nidaqmx.Task() as task:
-                channel_name = self.daq_in_name + "/ai0"
-
-                try:
-                    task.ai_channels.add_ai_voltage_chan(channel_name)
-                except Exception as e:
-                    print("DAQ is not connected, task could not be created")
-                    return
-
-                task.timing.cfg_samp_clk_timing(rate=self.sample_rate,
-                                                sample_mode=AcquisitionType.CONTINUOUS)
-
-                reader = AnalogMultiChannelReader(task.in_stream)
-                task.start()
-
-                while self.is_running:
-                    try:
-                        reader.read_many_sample(data=self.input,
-                                                number_of_samples_per_channel=self.read_chunk_size)
-                        # self.plotter.update_plot(self.input)
-                        plt.plot(self.input)
-                        plt.show()
-                    except Exception as e:
-                        print(e)
-                        return
-
+            task = nidaqmx.Task()
         except OSError:
-            print("DAQ not connected, could not create task")
+            print("DAQ is not connected, task could not be created")
             return
+
+        channel_name = self.daq_in_name + "/ai0"
+
+        try:
+            task.ai_channels.add_ai_voltage_chan(channel_name)
+        except Exception as e:
+            print("DAQ is not connected, task could not be created")
+            return
+
+        task.timing.cfg_samp_clk_timing(rate=self.sample_rate,
+                                        sample_mode=AcquisitionType.CONTINUOUS)
+
+        reader = AnalogMultiChannelReader(task.in_stream)
+        task.start()
+
+        while self.is_running:
+            try:
+                reader.read_many_sample(data=self.input,
+                                        number_of_samples_per_channel=self.read_chunk_size)
+                # self.plotter.update_plot(self.input)
+                print(self.input)
+            except Exception as e:
+                print(e)
+                return
 
 def find_ni_devices():
     system = System.local()
@@ -69,7 +68,7 @@ def find_ni_devices():
 
 if __name__ == '__main__':
     print('\nRunning demo for SignalReader\n')
-    # print(find_ni_devices())
+    print(find_ni_devices())
     reader_thread = SignalReader()
     reader_thread.start()
     input("Press return to stop")
