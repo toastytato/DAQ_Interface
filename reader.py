@@ -75,5 +75,6 @@ if __name__ == '__main__':
     reader_thread.start()
     input("Press return to stop")
     reader_thread.is_running = False
+    reader_thread.join()
     print("\nTask done")
 
