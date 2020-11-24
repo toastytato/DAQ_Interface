@@ -17,7 +17,7 @@ class SignalWriter(Thread):
         self.start_thread_flag = Event()
         self.daq_out_name = 'Dev1'
         self.signal_rate = 8000  # signals per second
-        self.chunks_per_second = 1
+        self.chunks_per_second = 2
         self.write_chunk_size = self.signal_rate // self.chunks_per_second
         # size of chunk to write (nearest floor integer)
         self.WaveGen = [WaveGenerator()] * NUM_CHANNELS
@@ -48,16 +48,15 @@ class SignalWriter(Thread):
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
         print("Voltage is: %d, Frequency is: %d Hz" % (self.voltage, self.frequency))
-        # waveform = self.WaveGen[0].generate_wave(self.voltage,
-        #                                          self.frequency,
-        #                                          self.signal_rate,
-        #                                          self.write_chunk_size)
-        waveform = self.WaveGen[0].generate_n_periods(self.voltage,
-                                                      self.frequency,
-                                                      self.signal_rate,
-                                                      n=2)
-        self.task.write(data=waveform)
-        self.task.write(data=waveform)
+        waveform = self.WaveGen[0].generate_wave(self.voltage,
+                                                 self.frequency,
+                                                 self.signal_rate,
+                                                 self.write_chunk_size)
+        # waveform = self.WaveGen[0].generate_n_periods(self.voltage,
+        #                                               self.frequency,
+        #                                               self.signal_rate,
+        #                                               n=2)
+        self.task.write(data=waveform, timeout=2)
 
     def start_signal(self):
         if not self.task_created():
