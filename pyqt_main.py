@@ -87,8 +87,8 @@ class MainWindow(QMainWindow):
         print("Closing...")
         self.read_thread.is_running = False
         self.write_thread.is_running = False
-        self.read_thread.exit()
-        self.write_thread.exit()
+        self.read_thread.wait()
+        self.write_thread.wait()
 
 
 class SignalPlot(pg.PlotWidget):
