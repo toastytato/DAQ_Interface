@@ -21,13 +21,12 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(QSize(720, 360))
         self.setWindowTitle("DAQ Interface")
 
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-
+        self.mainbox = QWidget(self)
+        self.setCentralWidget(self.mainbox)
         layout = QGridLayout(self)
-        central_widget.setLayout(layout)
+        self.mainbox.setLayout(layout)
 
-        title = QLabel("Signal Debugger")
+        title = QLabel("Signal Debugger", self)
         title.setAlignment(QtCore.Qt.AlignHCenter)
         self.plotter = SignalPlot()
 
