@@ -1,14 +1,16 @@
 import nidaqmx
 from nidaqmx.stream_writers import AnalogMultiChannelWriter
 from nidaqmx.constants import AcquisitionType, RegenerationMode
-from constants import *
 import numpy as np
 from threading import Thread, Event
 import matplotlib.pyplot as plt
 
+# --- From DAQ Control --- #
+from constants import *
+
 
 class SignalWriter(Thread):
-    def __init__(self):
+    def __init__(self, dev_name='Dev1'):
         Thread.__init__(self)
         self.writer = None
         self.task_counter = 0
@@ -16,7 +18,7 @@ class SignalWriter(Thread):
         self.is_running = False
         self.exit = False
         self.start_thread_flag = Event()
-        self.daq_out_name = 'Dev1'
+        self.daq_out_name = dev_name
         self.signal_rate = 8000  # signals per second
         self.chunks_per_second = 2
         self.write_chunk_size = self.signal_rate // self.chunks_per_second

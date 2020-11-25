@@ -2,25 +2,29 @@ import nidaqmx
 from nidaqmx.stream_readers import AnalogMultiChannelReader
 from nidaqmx.constants import AcquisitionType
 from nidaqmx.system import System
-from constants import *
+from pyqtgraph.Qt import QtCore
 import numpy as np
 from threading import Thread, Event
 import matplotlib.pyplot as plt
-import pyqt_test as myplot
+import time
+
+from constants import *
+from writer import WaveGenerator
 
 
-class SignalReader(Thread):
-    def __init__(self):
-        Thread.__init__(self)
+class SignalReader(QtCore.QThread):
+    newData = QtCore.pyqtSignal(object)
+
+    def __init__(self, dev_name='Dev2'):
+        super().__init__()
+
         self.reader = None
         self.is_running = False
-        self.daq_in_name = 'Dev2'
+        self.daq_in_name = dev_name
 
         self.sample_rate = 10
         self.read_chunk_size = 20
         self.input = np.empty(shape=(1, self.read_chunk_size))
-
-        # self.plotter = myplot.SignalPlot()
 
     def run(self):
         self.is_running = True
@@ -49,13 +53,51 @@ class SignalReader(Thread):
             try:
                 reader.read_many_sample(data=self.input,
                                         number_of_samples_per_channel=self.read_chunk_size)
-                # self.plotter.update_plot(self.input)
-                print(self.input)
+                self.newData.emit(self.input)
+
             except Exception as e:
+                print("Error with read_many_sample")
                 print(e)
                 break
 
         task.close()
+
+
+class DebugSignalGenerator(QtCore.QThread):
+    """
+    Used as debug signal generator to create a waveform while debugging to create waveforms
+    without initializing NI method that can raise errors
+    """
+
+    newData = QtCore.pyqtSignal(object)
+
+    def __init__(self, voltage, frequency, sample_rate, chunk_size):
+        super().__init__()
+
+        self.is_running = False
+
+        self.voltage = voltage
+        self.frequency = frequency
+        self.sample_rate = sample_rate
+        self.chunk_size = chunk_size
+        self.output = np.empty(shape=(1, self.chunk_size))
+
+    def run(self):
+        self.is_running = True
+
+        wave_gen = WaveGenerator()
+
+        while self.is_running:
+            self.output = wave_gen.generate_wave(self.voltage,
+                                                 self.frequency,
+                                                 self.sample_rate,
+                                                 self.chunk_size)
+            self.output = np.around(self.output, 4)
+            self.output = self.output.reshape((1, self.chunk_size))
+            print(self.output)
+            self.newData.emit(self.output)
+            time.sleep(self.chunk_size / self.sample_rate)
+
 
 def find_ni_devices():
     system = System.local()
@@ -70,6 +112,7 @@ def find_ni_devices():
 
 if __name__ == '__main__':
     print('\nRunning demo for SignalReader\n')
+
     print(find_ni_devices())
     reader_thread = SignalReader()
     reader_thread.start()
@@ -77,4 +120,3 @@ if __name__ == '__main__':
     reader_thread.is_running = False
     reader_thread.join()
     print("\nTask done")
-
