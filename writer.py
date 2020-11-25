@@ -10,7 +10,7 @@ from constants import *
 
 
 class SignalWriter(Thread):
-    def __init__(self, dev_name='Dev1'):
+    def __init__(self, voltage, frequency, sample_rate, chunks_per_sec, dev_name='Dev1'):
         Thread.__init__(self)
         self.writer = None
         self.task_counter = 0
@@ -19,15 +19,15 @@ class SignalWriter(Thread):
         self.exit = False
         self.start_thread_flag = Event()
         self.daq_out_name = dev_name
-        self.signal_rate = 8000  # signals per second
-        self.chunks_per_second = 2
+        self.signal_rate = sample_rate  # signals per second
+        self.chunks_per_second = chunks_per_sec
         self.write_chunk_size = self.signal_rate // self.chunks_per_second
         # size of chunk to write (nearest floor integer)
         self.WaveGen = [WaveGenerator()] * NUM_CHANNELS
         self.waveforms = np.empty(NUM_CHANNELS)
 
-        self.voltage = 0
-        self.frequency = 0
+        self.voltage = voltage
+        self.frequency = frequency
         self.task = []
 
     # ---- DAQ Control method 2 based on tenss_Python_DAQ_examples
@@ -50,7 +50,7 @@ class SignalWriter(Thread):
         self.task.out_stream.regen_mode = RegenerationMode.ALLOW_REGENERATION
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
-        print("Voltage is: %d, Frequency is: %d Hz" % (self.voltage, self.frequency))
+        print("Voltage is: %.3f, Frequency is: %.3f Hz" % (self.voltage, self.frequency))
         # wave = self.WaveGen[0].generate_wave(self.voltage,
         #                                      self.frequency,
         #                                      self.signal_rate,
@@ -58,7 +58,7 @@ class SignalWriter(Thread):
         wave = self.WaveGen[0].generate_n_periods(self.voltage,
                                                   self.frequency,
                                                   self.signal_rate,
-                                                  num=2)
+                                                  num=4)
         self.task.write(data=wave, timeout=2)
 
     def start_signal(self):
@@ -85,6 +85,93 @@ class SignalWriter(Thread):
         else:
             print('No task created: run the create_task method')
             return False
+
+    # puts all waves into a single array for AnalogMultiChannelWriter
+    def package_waves(self, volt, freq, signal_rate, chunk_size):
+        output = np.empty(shape=(NUM_CHANNELS, chunk_size))
+        for ch in range(NUM_CHANNELS):
+            output[ch] = self.WaveGen[ch].generate_wave(volt, freq, signal_rate, chunk_size)
+        return output
+
+
+# creates the sine wave to output
+class WaveGenerator:
+    def __init__(self):
+        self.counter = 0
+        self.last_freq = 0
+        self.output_times = []
+
+    def generate_n_periods(self, voltage, frequency, sample_rate, num=1):
+        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
+
+        rad_per_sec = 2 * np.pi * frequency
+        samples_per_period = int(sample_rate / rad_per_sec)
+
+        self.output_times = np.linspace(start=0,
+                                        stop=num / frequency,
+                                        num=samples_per_period * num)
+        output_waveform = amplitude * np.sin(self.output_times * rad_per_sec)
+        return output_waveform
+
+    def generate_wave(self, voltage, frequency, sample_rate, samples_per_chunk):
+        """
+
+        :param voltage: RMS voltage, which will be converted to amplitude in signal
+        :param frequency: Determines if AC or DC. Frequency of signal in Hz if not 0, creates DC signal if frequency is 0
+        :param sample_rate: # of data points per second
+        :param samples_per_chunk: # of data points that will be written in this output buffer
+        :return: np.array with waveform of input params
+
+        """
+        if self.last_freq != frequency:
+            self.counter = 0
+            self.last_freq = frequency
+        else:
+            self.counter += 1
+
+        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
+        # waves_per_sec = frequency
+        rad_per_sec = 2 * np.pi * frequency
+        chunks_per_sec = sample_rate / samples_per_chunk
+        sec_per_chunk = 1 / chunks_per_sec
+        waves_per_chunk = frequency / chunks_per_sec
+
+        # shift the frequency if starting in the middle of a wave
+        start_fraction = waves_per_chunk % 1
+        freq_shifter = self.counter * 2 * np.pi * start_fraction
+
+        self.output_times = np.linspace(start=0, stop=sec_per_chunk, num=samples_per_chunk)
+        output_waveform = amplitude * np.sin(self.output_times * rad_per_sec + freq_shifter)
+
+        return output_waveform
+
+
+if __name__ == '__main__':
+    print('\nRunning demo for SignalWriter\n')
+    writer = SignalWriter()
+
+    writer.voltage = 3
+    writer.frequency = 5
+    writer.mode = 'AC'
+
+    writer.create_task()
+    writer.start_signal()
+    # wave_gen = WaveGenerator()
+    # waveform = wave_gen.generate_wave(voltage=writer.voltage,
+    #                                   frequency=writer.frequency,
+    #                                   sample_rate=writer.signal_rate,
+    #                                   samples_per_chunk=writer.signal_rate // 4)
+    # plt.plot(wave_gen.output_times, waveform)
+    # plt.show()
+
+    input("Press return to stop")
+    writer.stop_signal()
+
+
+
+
+
+
 
     # # ---- DAQ Control method 1 based on MuControl ----
     #
@@ -178,84 +265,3 @@ class SignalWriter(Thread):
     #         self.task.close()
     #
     #     return 0
-
-    # puts all waves into a single array for AnalogMultiChannelWriter
-    def package_waves(self, volt, freq, signal_rate, chunk_size):
-        output = np.empty(shape=(NUM_CHANNELS, chunk_size))
-        for ch in range(NUM_CHANNELS):
-            output[ch] = self.WaveGen[ch].generate_wave(volt, freq, signal_rate, chunk_size)
-        return output
-
-
-# creates the sine wave to output
-class WaveGenerator:
-    def __init__(self):
-        self.counter = 0
-        self.last_freq = 0
-        self.output_times = []
-
-    def generate_n_periods(self, voltage, frequency, sample_rate, num=1):
-        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
-
-        rad_per_sec = 2 * np.pi * frequency
-        samples_per_period = int(sample_rate / rad_per_sec)
-
-        self.output_times = np.linspace(start=0,
-                                        stop=num / frequency,
-                                        num=samples_per_period * num)
-        output_waveform = amplitude * np.sin(self.output_times * rad_per_sec)
-        return output_waveform
-
-    def generate_wave(self, voltage, frequency, sample_rate, samples_per_chunk):
-        """
-
-        :param voltage: RMS voltage, which will be converted to amplitude in signal
-        :param frequency: Determines if AC or DC. Frequency of signal in Hz if not 0, creates DC signal if frequency is 0
-        :param sample_rate: # of data points per second
-        :param samples_per_chunk: # of data points that will be written in this output buffer
-        :return: np.array with waveform of input params
-
-        """
-        if self.last_freq != frequency:
-            self.counter = 0
-            self.last_freq = frequency
-        else:
-            self.counter += 1
-
-        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
-        # waves_per_sec = frequency
-        rad_per_sec = 2 * np.pi * frequency
-        chunks_per_sec = sample_rate / samples_per_chunk
-        sec_per_chunk = 1 / chunks_per_sec
-        waves_per_chunk = frequency / chunks_per_sec
-
-        # shift the frequency if starting in the middle of a wave
-        start_fraction = waves_per_chunk % 1
-        freq_shifter = self.counter * 2 * np.pi * start_fraction
-
-        self.output_times = np.linspace(start=0, stop=sec_per_chunk, num=samples_per_chunk)
-        output_waveform = amplitude * np.sin(self.output_times * rad_per_sec + freq_shifter)
-
-        return output_waveform
-
-
-if __name__ == '__main__':
-    print('\nRunning demo for SignalWriter\n')
-    writer = SignalWriter()
-
-    writer.voltage = 3
-    writer.frequency = 5
-    writer.mode = 'AC'
-
-    writer.create_task()
-    writer.start_signal()
-    # wave_gen = WaveGenerator()
-    # waveform = wave_gen.generate_wave(voltage=writer.voltage,
-    #                                   frequency=writer.frequency,
-    #                                   sample_rate=writer.signal_rate,
-    #                                   samples_per_chunk=writer.signal_rate // 4)
-    # plt.plot(wave_gen.output_times, waveform)
-    # plt.show()
-
-    input("Press return to stop")
-    writer.stop_signal()

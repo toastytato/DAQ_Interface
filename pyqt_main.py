@@ -46,7 +46,10 @@ class MainWindow(QMainWindow):
             self.read_thread.start()
 
             # initiate write threads for analog output
-            self.write_thread = SignalWriter()
+            self.write_thread = SignalWriter(voltage=5,
+                                             frequency=4,
+                                             sample_rate=4000,
+                                             chunks_per_sec=2)
 
         else:
             # read from a waveform generator
@@ -75,7 +78,6 @@ class SignalPlot(pg.PlotWidget):
 
     def update_plot(self, incoming_data):
         self.clear()
-        print(incoming_data)
         for i in range(0, np.shape(incoming_data)[0]):
             self.plot(incoming_data[i], clear=False, pen=self.pens[i])
 
