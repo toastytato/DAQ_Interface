@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
 
         self.mainbox = QWidget(self)
         self.setCentralWidget(self.mainbox)
-        layout = QGridLayout(self)
+        layout = QGridLayout()
         self.mainbox.setLayout(layout)
 
         title = QLabel("Signal Debugger", self)
