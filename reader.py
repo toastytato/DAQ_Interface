@@ -35,7 +35,7 @@ class SignalReader(QtCore.QThread):
             print("DAQ is not connected, task could not be created")
             return
 
-        channel_name = []
+        channel_name = [NUM_CHANNELS]
         for i in range(NUM_CHANNELS):
             channel_name[i] = self.daq_in_name + "/ai" + str(i)
 
