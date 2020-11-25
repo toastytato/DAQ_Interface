@@ -30,7 +30,7 @@ class SignalReader(QtCore.QThread):
         self.is_running = True
 
         try:
-            task = nidaqmx.Task()
+            task = nidaqmx.Task("Read Task")
         except OSError:
             print("DAQ is not connected, task could not be created")
             return

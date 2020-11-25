@@ -85,9 +85,11 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         print("Closing...")
-        self.read_thread.is_running = False
+        if not DEBUG_MODE:
+            self.read_thread.is_running = False
+            self.read_thread.wait()
+
         self.write_thread.is_running = False
-        self.read_thread.wait()
         self.write_thread.wait()
 
 
