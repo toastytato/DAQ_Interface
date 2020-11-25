@@ -13,7 +13,7 @@ from writer import WaveGenerator
 
 
 class SignalReader(QtCore.QThread):
-    newData = QtCore.pyqtSignal(object)
+    incoming_data = QtCore.pyqtSignal(object)
 
     def __init__(self, sample_rate, sample_size, dev_name='Dev2'):
         super().__init__()
@@ -35,10 +35,13 @@ class SignalReader(QtCore.QThread):
             print("DAQ is not connected, task could not be created")
             return
 
-        channel_name = self.daq_in_name + "/ai0"
+        channel_name = []
+        for i in range(NUM_CHANNELS):
+            channel_name[i] = self.daq_in_name + "/ai" + str(i)
 
         try:
-            task.ai_channels.add_ai_voltage_chan(channel_name)
+            for name in channel_name:
+                task.ai_channels.add_ai_voltage_chan(name)
         except Exception as e:
             print("DAQ is not connected, task could not be created")
             return
@@ -53,7 +56,7 @@ class SignalReader(QtCore.QThread):
             try:
                 reader.read_many_sample(data=self.input,
                                         number_of_samples_per_channel=self.read_chunk_size)
-                self.newData.emit(self.input)
+                self.incoming_data.emit(self.input)
 
             except Exception as e:
                 print("Error with read_many_sample")

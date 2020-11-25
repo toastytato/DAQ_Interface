@@ -1,6 +1,7 @@
 import nidaqmx
 from nidaqmx.stream_writers import AnalogMultiChannelWriter
 from nidaqmx.constants import AcquisitionType, RegenerationMode
+from pyqtgraph.Qt import QtCore
 import numpy as np
 from threading import Thread, Event
 
@@ -8,9 +9,10 @@ from threading import Thread, Event
 from constants import *
 
 
-class SignalWriter(Thread):
+class SignalWriter(QtCore.QThread):
+
     def __init__(self, voltage, frequency, sample_rate, chunks_per_sec, dev_name='Dev1'):
-        Thread.__init__(self)
+        super().__init__()
         self.writer = None
         self.task_counter = 0
 
@@ -60,14 +62,14 @@ class SignalWriter(Thread):
                                                   num=4)
         self.task.write(data=wave, timeout=2)
 
-    def start_signal(self):
+    def run(self):
         if not self.task_created():
             return
 
         self.is_running = True
         self.task.start()
 
-    def stop_signal(self):
+    def stop(self):
         if not self.task_created():
             return
 
@@ -147,11 +149,14 @@ class WaveGenerator:
 
 if __name__ == '__main__':
     print('\nRunning demo for SignalWriter\n')
-    writer = SignalWriter()
 
-    writer.voltage = 3
-    writer.frequency = 5
-    writer.mode = 'AC'
+    voltage = input("Input Voltage: ")
+    frequency = input("Input Frequency: ")
+
+    writer = SignalWriter(voltage=voltage,
+                          frequency=frequency,
+                          sample_rate=1000,
+                          chunks_per_sec=2)
 
     writer.create_task()
     writer.start_signal()

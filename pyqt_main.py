@@ -1,7 +1,9 @@
 import sys
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QPushButton
-from PyQt5.QtCore import QSize, pyqtSlot
+from PyQt5.QtWidgets import (QMainWindow, QLabel, QGridLayout, QWidget,
+                             QPushButton, QLineEdit)
+from PyQt5.QtCore import QSize, pyqtSlot, Qt
+from PyQt5.QtGui import *
 import pyqtgraph as pg
 import numpy as np
 
@@ -18,7 +20,7 @@ class MainWindow(QMainWindow):
         self.init_threads()
 
     def init_ui(self):
-        self.setMinimumSize(QSize(720, 360))
+        self.setMinimumSize(QSize(720, 480))
         self.setWindowTitle("DAQ Interface")
 
         self.mainbox = QWidget(self)
@@ -30,24 +32,27 @@ class MainWindow(QMainWindow):
         title.setAlignment(QtCore.Qt.AlignHCenter)
         self.plotter = SignalPlot()
 
-        self.button = QPushButton('Start Signal Out')
-        self.button.clicked.connect(self.button_on_click)
+        self.b1 = QPushButton('Start Signal Out')
+        self.b1.clicked.connect(self.button_on_click)
+
+        self.t1 = QLineEdit()
 
         layout.addWidget(title)
         layout.addWidget(self.plotter)
-        layout.addWidget(self.button)
+        layout.addWidget(self.t1)
+        layout.addWidget(self.b1)
 
     def init_threads(self):
         # When NI instrument is attached
         if not DEBUG_MODE:
             # initiate read threads for analog input
             self.read_thread = SignalReader(sample_rate=1000,
-                                             sample_size=500)
-            self.read_thread.newData.connect(self.plotter.update_plot)
+                                            sample_size=500)
+            self.read_thread.incoming_data.connect(self.plotter.update_plot)
             self.read_thread.start()
 
             # initiate write threads for analog output
-            self.write_thread = SignalWriter(voltage=5,
+            self.write_thread = SignalWriter(voltage=2,
                                              frequency=4,
                                              sample_rate=4000,
                                              chunks_per_sec=2)
@@ -65,17 +70,17 @@ class MainWindow(QMainWindow):
     def button_on_click(self):
         if not DEBUG_MODE:
             if self.write_thread.is_running:
-                self.write_thread.stop_signal()
-                self.button.setText("Press to start signal")
-                print("Started signal")
-            else:
-                self.write_thread.start_signal()
-                self.button.setText("Press to stop signal")
                 print("Stopped signal")
+                self.write_thread.stop()
+                self.b1.setText("Press to start signal")
+            else:
+                print("Started signal")
+                self.write_thread.start()
+                self.b1.setText("Press to stop signal")
         else:
             if not self.write_thread.is_running:
                 self.write_thread.start()
-                self.button.setText("Signal outputting")
+                self.b1.setText("Signal outputting")
                 print("Started Debug signal")
 
     def closeEvent(self, event):
