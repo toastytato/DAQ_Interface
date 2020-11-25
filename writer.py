@@ -3,7 +3,6 @@ from nidaqmx.stream_writers import AnalogMultiChannelWriter
 from nidaqmx.constants import AcquisitionType, RegenerationMode
 import numpy as np
 from threading import Thread, Event
-import matplotlib.pyplot as plt
 
 # --- From DAQ Control --- #
 from constants import *
@@ -50,7 +49,7 @@ class SignalWriter(Thread):
         self.task.out_stream.regen_mode = RegenerationMode.ALLOW_REGENERATION
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
-        print("Voltage is: %.3f, Frequency is: %.3f Hz" % (self.voltage, self.frequency))
+        print("Voltage is: %.2f, Frequency is: %.2f Hz" % (self.voltage, self.frequency))
         # wave = self.WaveGen[0].generate_wave(self.voltage,
         #                                      self.frequency,
         #                                      self.signal_rate,
