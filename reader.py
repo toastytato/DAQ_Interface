@@ -24,7 +24,7 @@ class SignalReader(QtCore.QThread):
 
         self.sample_rate = sample_rate
         self.read_chunk_size = sample_size
-        self.input = np.empty(shape=(1, self.read_chunk_size))
+        self.input = np.empty(shape=(NUM_CHANNELS, self.read_chunk_size))
 
     def run(self):
         self.is_running = True
@@ -117,9 +117,10 @@ if __name__ == '__main__':
     print('\nRunning demo for SignalReader\n')
 
     print(find_ni_devices())
-    reader_thread = SignalReader()
+    reader_thread = SignalReader(sample_rate=1000,
+                                 sample_size=1000)
     reader_thread.start()
     input("Press return to stop")
     reader_thread.is_running = False
-    reader_thread.join()
+    reader_thread.wait()
     print("\nTask done")

@@ -85,7 +85,9 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         print("Closing...")
+        self.read_thread.is_running = False
         self.write_thread.is_running = False
+        self.read_thread.exit()
         self.write_thread.exit()
 
 
