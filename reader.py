@@ -94,7 +94,7 @@ class DebugSignalGenerator(QtCore.QThread):
                                                  self.chunk_size)
             self.output = np.around(self.output, 4)
             self.output = self.output.reshape((1, self.chunk_size))
-            print(self.output)
+            # print(self.output)
             self.newData.emit(self.output)
             time.sleep(self.chunk_size / self.sample_rate)
 

@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         else:
             # read from a waveform generator
             self.read_thread = DebugSignalGenerator(voltage=1,
-                                                    frequency=20,
+                                                    frequency=1.23,
                                                     sample_rate=1000,
                                                     sample_size=1000)
             self.read_thread.newData.connect(self.plotter.update_plot)

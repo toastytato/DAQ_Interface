@@ -51,10 +51,14 @@ class SignalWriter(Thread):
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
         print("Voltage is: %d, Frequency is: %d Hz" % (self.voltage, self.frequency))
-        wave = self.WaveGen[0].generate_wave(self.voltage,
-                                             self.frequency,
-                                             self.signal_rate,
-                                             self.write_chunk_size)
+        # wave = self.WaveGen[0].generate_wave(self.voltage,
+        #                                      self.frequency,
+        #                                      self.signal_rate,
+        #                                      self.write_chunk_size)
+        wave = self.WaveGen[0].generate_n_periods(self.voltage,
+                                                  self.frequency,
+                                                  self.signal_rate,
+                                                  num=2)
         self.task.write(data=wave, timeout=2)
 
     def start_signal(self):
@@ -190,15 +194,15 @@ class WaveGenerator:
         self.last_freq = 0
         self.output_times = []
 
-    def generate_n_periods(self, voltage, frequency, sample_rate, n=1):
+    def generate_n_periods(self, voltage, frequency, sample_rate, num=1):
         amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
 
         rad_per_sec = 2 * np.pi * frequency
         samples_per_period = int(sample_rate / rad_per_sec)
 
         self.output_times = np.linspace(start=0,
-                                        stop=n / frequency,
-                                        num=samples_per_period * n)
+                                        stop=num / frequency,
+                                        num=samples_per_period * num)
         output_waveform = amplitude * np.sin(self.output_times * rad_per_sec)
         return output_waveform
 
@@ -239,8 +243,8 @@ if __name__ == '__main__':
     print('\nRunning demo for SignalWriter\n')
     writer = SignalWriter()
 
-    writer.voltage = 5
-    writer.frequency = 20
+    writer.voltage = 3
+    writer.frequency = 5
     writer.mode = 'AC'
 
     writer.create_task()
