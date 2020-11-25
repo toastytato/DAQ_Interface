@@ -240,7 +240,7 @@ if __name__ == '__main__':
     writer = SignalWriter()
 
     writer.voltage = 5
-    writer.frequency = 1.3
+    writer.frequency = 20
     writer.mode = 'AC'
 
     writer.create_task()

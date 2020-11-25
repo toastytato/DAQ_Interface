@@ -15,15 +15,15 @@ from writer import WaveGenerator
 class SignalReader(QtCore.QThread):
     newData = QtCore.pyqtSignal(object)
 
-    def __init__(self, dev_name='Dev2'):
+    def __init__(self, sample_rate, sample_size, dev_name='Dev2'):
         super().__init__()
 
         self.reader = None
         self.is_running = False
         self.daq_in_name = dev_name
 
-        self.sample_rate = 10
-        self.read_chunk_size = 20
+        self.sample_rate = sample_rate
+        self.read_chunk_size = sample_size
         self.input = np.empty(shape=(1, self.read_chunk_size))
 
     def run(self):
@@ -71,7 +71,7 @@ class DebugSignalGenerator(QtCore.QThread):
 
     newData = QtCore.pyqtSignal(object)
 
-    def __init__(self, voltage, frequency, sample_rate, chunk_size):
+    def __init__(self, voltage, frequency, sample_rate, sample_size):
         super().__init__()
 
         self.is_running = False
@@ -79,7 +79,7 @@ class DebugSignalGenerator(QtCore.QThread):
         self.voltage = voltage
         self.frequency = frequency
         self.sample_rate = sample_rate
-        self.chunk_size = chunk_size
+        self.chunk_size = sample_size
         self.output = np.empty(shape=(1, self.chunk_size))
 
     def run(self):

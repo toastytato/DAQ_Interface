@@ -40,7 +40,8 @@ class MainWindow(QMainWindow):
     def init_threads(self):
         if not debug_mode:
             # initiate read threads for analog input
-            self.read_thread = SignalReader()
+            self.read_thread = SignalReader(sample_rate=1000,
+                                            sample_size=500)
             self.read_thread.newData.connect(self.plotter.update_plot)
             self.read_thread.start()
 
@@ -52,7 +53,7 @@ class MainWindow(QMainWindow):
             self.read_thread = DebugSignalGenerator(voltage=1,
                                                     frequency=20,
                                                     sample_rate=1000,
-                                                    chunk_size=1000)
+                                                    sample_size=1000)
             self.read_thread.newData.connect(self.plotter.update_plot)
             self.read_thread.start()
 

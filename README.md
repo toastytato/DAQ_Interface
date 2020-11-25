@@ -5,10 +5,13 @@ GUI for controlling NI DAQ devices and monitoring output/input voltages, current
 For standalone application, just download main.exe in the 'dist' and run the file.
 
 Recommended to use Python 3.7.8 (able to run on Windows Vista) <br/>
-Install NI DAQ API and Matplotlib version 3.2.2 (stability issues with newer version)
+Install NI DAQ API and Matplotlib version 3.2.2 (stability issues with newer version)<br/>
+
+Use PyQt5 version 5.9.2 to work on Windows Vista <br/>
 ```
 pip install nidaqmx
 pip install matplotlib==3.2.2
+pip install pyqt5==5.9.2
 ```
 
 ## Usage
