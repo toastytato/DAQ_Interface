@@ -90,7 +90,7 @@ class MainWindow(QMainWindow):
             self.read_thread.wait()
 
         self.write_thread.is_running = False
-        self.write_thread.wait()
+        self.write_thread.quit()
 
 
 class SignalPlot(pg.PlotWidget):

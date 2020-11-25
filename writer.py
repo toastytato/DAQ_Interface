@@ -29,7 +29,6 @@ class SignalWriter(QtCore.QThread):
 
         self.voltage = voltage
         self.frequency = frequency
-        self.task = []
 
     # ---- DAQ Control method 2 based on tenss_Python_DAQ_examples
 
@@ -62,10 +61,6 @@ class SignalWriter(QtCore.QThread):
                                                   num=4)
         self.task.write(data=wave, timeout=2)
 
-    def run(self):
-        if not self.task_created():
-            return
-
     def start_signal(self):
         if not self.task_created():
             return
@@ -79,6 +74,9 @@ class SignalWriter(QtCore.QThread):
 
         self.is_running = False
         self.task.stop()
+
+    def quit(self):
+        self.task.close()
 
     def task_created(self):
         """
