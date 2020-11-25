@@ -41,10 +41,10 @@ class MainWindow(QMainWindow):
         # When NI instrument is attached
         if not DEBUG_MODE:
             # initiate read threads for analog input
-            self.write_thread = SignalReader(sample_rate=1000,
+            self.read_thread = SignalReader(sample_rate=1000,
                                              sample_size=500)
-            self.write_thread.newData.connect(self.plotter.update_plot)
-            self.write_thread.start()
+            self.read_thread.newData.connect(self.plotter.update_plot)
+            self.read_thread.start()
 
             # initiate write threads for analog output
             self.write_thread = SignalWriter(voltage=5,
