@@ -18,7 +18,7 @@ class SignalWriter(QtCore.QThread):
 
         self.is_running = False
         self.exit = False
-        self.start_thread_flag = Event()
+        # self.start_thread_flag = Event()
         self.daq_out_name = dev_name
         self.signal_rate = sample_rate  # signals per second
         self.chunks_per_second = chunks_per_sec
@@ -66,10 +66,14 @@ class SignalWriter(QtCore.QThread):
         if not self.task_created():
             return
 
+    def start_signal(self):
+        if not self.task_created():
+            return
+
         self.is_running = True
         self.task.start()
 
-    def stop(self):
+    def stop_signal(self):
         if not self.task_created():
             return
 

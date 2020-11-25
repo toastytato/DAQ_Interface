@@ -71,11 +71,11 @@ class MainWindow(QMainWindow):
         if not DEBUG_MODE:
             if self.write_thread.is_running:
                 print("Stopped signal")
-                self.write_thread.stop()
+                self.write_thread.stop_signal()
                 self.b1.setText("Press to start signal")
             else:
                 print("Started signal")
-                self.write_thread.start()
+                self.write_thread.start_signal()
                 self.b1.setText("Press to stop signal")
         else:
             if not self.write_thread.is_running:
