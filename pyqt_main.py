@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
                                              sample_rate=4000,
                                              chunks_per_sec=2)
             self.write_thread.create_task()
+
         # Debugging without NI instrument
         else:
             # read from a waveform generator
@@ -70,11 +71,11 @@ class MainWindow(QMainWindow):
     def button_on_click(self):
         if not DEBUG_MODE:
             if self.write_thread.is_running:
-                print("Stopped signal")
+                print("Stopped DAQ signal")
                 self.write_thread.stop_signal()
                 self.b1.setText("Press to start signal")
             else:
-                print("Started signal")
+                print("Started DAQ signal")
                 self.write_thread.start_signal()
                 self.b1.setText("Press to stop signal")
         else:

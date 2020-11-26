@@ -18,7 +18,7 @@ class SignalWriter(QtCore.QThread):
 
         self.is_running = False
         self.exit = False
-        # self.start_thread_flag = Event()
+        self.start_thread_flag = Event()
         self.daq_out_name = dev_name
         self.signal_rate = sample_rate  # signals per second
         self.chunks_per_second = chunks_per_sec
@@ -96,6 +96,100 @@ class SignalWriter(QtCore.QThread):
             output[ch] = self.WaveGen[ch].generate_wave(volt, freq, signal_rate, chunk_size)
         return output
 
+    # ---- DAQ Control method 1 based on MuControl ----
+
+    # tells thread to stop blocking and restart
+    def restart(self):
+        self.start_thread_flag.set()
+
+    # basically a one time call to start the write task
+    def run(self):
+        # first run, set start signal
+        self.restart()
+        # keep thread running
+        while True:
+            self.start_thread_flag.wait()
+            self.start_thread_flag.clear()
+            # checks flag for exiting thread
+            if self.exit is True:
+                return
+
+            # flag for starting or ending nidaqmx.Task() object
+            self.is_running = True
+
+            print("Signal Writer Run")
+
+            try:
+                self.task = nidaqmx.Task()  # Start the task
+                self.task_counter += 1
+            except OSError:
+                print("DAQ is not connected, task could not be created")
+                continue
+
+            # Add input channels
+            for i in range(NUM_CHANNELS):
+                channel_string = self.daq_out_name + '/' + f'ao{i}'
+                try:
+                    print("Channel ", channel_string, " added to task ", self.task.name)
+                    self.task.ao_channels.add_ao_voltage_chan(channel_string)
+                except Exception as e:
+                    if i == 0:
+                        print('Could not open write channels:')
+                        print(e)
+                        continue
+
+            print("Channel names: ", self.task.channel_names)
+
+            # Set the generation rate, and buffer size.
+            self.task.timing.cfg_samp_clk_timing(
+                rate=self.signal_rate,
+                sample_mode=AcquisitionType.CONTINUOUS)
+
+            # Set more properties for continuous signal modulation
+            self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
+            self.task.out_stream.output_buf_size = 4 * self.write_chunk_size
+
+            # Register the listening method to add more data
+            try:
+                self.task.register_every_n_samples_transferred_from_buffer_event(
+                    sample_interval=self.write_chunk_size,
+                    callback_method=self.callback)
+            except Exception as e:
+                print("Problem with callback method:")
+                print(e)
+                continue
+
+            # Initialize the writer
+            self.writer = AnalogMultiChannelWriter(self.task.out_stream)
+
+            self.waveforms = self.package_waves(self.voltage, self.frequency, self.signal_rate, self.write_chunk_size)
+
+            # Write the first set of data into the output buffer
+            try:
+                # Write two chunks of beginning data to avoid interruption
+                self.writer.write_many_sample(data=self.waveforms)
+            except Exception as e:
+                print("Could not write to channel:")
+                print(e)
+                continue
+
+            self.writer.write_many_sample(data=self.waveforms)
+            # start task, which will hold thread at this location continuously calling add_more_data
+            self.task.start()
+
+    # called by the task listener method
+    # won't get called when DAQ is not attached
+    def callback(self, task_handle, every_n_samples_event_type, number_of_samples, callback_data):
+        if self.is_running:
+            self.waveforms = self.package_waves(self.voltage, self.freq, self.write_chunk_size)
+            self.writer.write_many_sample(self.waveforms)
+        else:
+            print("closed write task")
+            self.task.close()
+
+        return 0
+
+
 
 # creates the sine wave to output
 class WaveGenerator:
@@ -172,102 +266,3 @@ if __name__ == '__main__':
 
     input("Press return to stop")
     writer.stop_signal()
-
-
-
-
-
-
-
-    # # ---- DAQ Control method 1 based on MuControl ----
-    #
-    # # tells thread to stop blocking and restart
-    # def restart(self):
-    #     self.start_thread_flag.set()
-    #
-    # # basically a one time call to start the write task
-    # def run(self):
-    #     # first run, set start signal
-    #     self.restart()
-    #     # keep thread running
-    #     while True:
-    #         self.start_thread_flag.wait()
-    #         self.start_thread_flag.clear()
-    #         # checks flag for exiting thread
-    #         if self.exit is True:
-    #             return
-    #
-    #         # flag for starting or ending nidaqmx.Task() object
-    #         self.is_running = True
-    #
-    #         print("Signal Writer Run")
-    #
-    #         try:
-    #             self.task = nidaqmx.Task()  # Start the task
-    #             self.task_counter += 1
-    #         except OSError:
-    #             print("DAQ is not connected, task could not be created")
-    #             continue
-    #
-    #         # Add input channels
-    #         for i in range(NUM_CHANNELS):
-    #             channel_string = self.daq_out_name + '/' + f'ao{i}'
-    #             try:
-    #                 print("Channel ", channel_string, " added to task ", self.task.name)
-    #                 self.task.ao_channels.add_ao_voltage_chan(channel_string)
-    #             except Exception as e:
-    #                 if i == 0:
-    #                     print('Could not open write channels:')
-    #                     print(e)
-    #                     continue
-    #
-    #         print("Channel names: ", self.task.channel_names)
-    #
-    #         # Set the generation rate, and buffer size.
-    #         self.task.timing.cfg_samp_clk_timing(
-    #             rate=self.signal_rate,
-    #             sample_mode=AcquisitionType.CONTINUOUS)
-    #
-    #         # Set more properties for continuous signal modulation
-    #         self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
-    #         self.task.out_stream.output_buf_size = 4 * self.write_chunk_size
-    #
-    #         # Register the listening method to add more data
-    #         try:
-    #             self.task.register_every_n_samples_transferred_from_buffer_event(
-    #                 sample_interval=self.write_chunk_size,
-    #                 callback_method=self.callback)
-    #         except Exception as e:
-    #             print("Problem with callback method:")
-    #             print(e)
-    #             continue
-    #
-    #         # Initialize the writer
-    #         self.writer = AnalogMultiChannelWriter(self.task.out_stream)
-    #
-    #         self.waveforms = self.package_waves(self.voltage, self.frequency, self.signal_rate, self.write_chunk_size)
-    #
-    #         # Write the first set of data into the output buffer
-    #         try:
-    #             # Write two chunks of beginning data to avoid interruption
-    #             self.writer.write_many_sample(data=self.waveforms)
-    #         except Exception as e:
-    #             print("Could not write to channel:")
-    #             print(e)
-    #             continue
-    #
-    #         self.writer.write_many_sample(data=self.waveforms)
-    #         # start task, which will hold thread at this location continuously calling add_more_data
-    #         self.task.start()
-    #
-    # # called by the task listener method
-    # # won't get called when DAQ is not attached
-    # def callback(self, task_handle, every_n_samples_event_type, number_of_samples, callback_data):
-    #     if self.is_running:
-    #         self.waveforms = self.package_waves(self.voltage, self.freq, self.write_chunk_size)
-    #         self.writer.write_many_sample(self.waveforms)
-    #     else:
-    #         print("closed write task")
-    #         self.task.close()
-    #
-    #     return 0
