@@ -1,11 +1,10 @@
 import sys
-from PyQt5 import QtCore, QtWidgets
+
+import pyqtgraph as pg
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import QSize, pyqtSlot
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QGridLayout, QWidget,
                              QPushButton, QLineEdit)
-from PyQt5.QtCore import QSize, pyqtSlot, Qt
-from PyQt5.QtGui import *
-import pyqtgraph as pg
-import numpy as np
 
 # --- From DAQ Control --- #
 from reader import *
@@ -91,7 +90,7 @@ class MainWindow(QMainWindow):
             self.read_thread.wait()
 
         self.write_thread.is_running = False
-        self.write_thread.quit()
+        self.write_thread.wait()
 
 
 class SignalPlot(pg.PlotWidget):
