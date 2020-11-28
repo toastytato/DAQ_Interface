@@ -1,14 +1,27 @@
-from nidaqmx.constants import AcquisitionType
-from nidaqmx.stream_writers import AnalogSingleChannelWriter
-from constants import *
+import time
+
 import nidaqmx
 import numpy as np
-import time
-import math
+from nidaqmx.constants import AcquisitionType
+from nidaqmx.system import System
+
+from constants import *
 
 
 # MODEL: handles backend of the program
 # contains data containers as well as helper functions for output to DAQ
+
+
+def find_ni_devices():
+    system = System.local()
+    dev_name_list = []
+    for device in system.devices:
+        assert device is not None
+        # device looks like "Device(name=cDAQ1Mod1)"
+        dev_name = str(device).replace(')', '').split('=')[1]
+        dev_name_list.append(dev_name)
+    return str(dev_name_list)
+
 
 # helper functions
 def verify_input(input, min, max):

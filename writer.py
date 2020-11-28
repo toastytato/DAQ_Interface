@@ -9,7 +9,7 @@ from pyqtgraph.Qt import QtCore
 from constants import *
 
 
-class SignalWriter(QtCore.QThread):
+class SignalWriter(QtCore.QObject):
 
     def __init__(self, voltage, frequency, sample_rate, chunks_per_sec, dev_name='Dev1'):
         super().__init__()
@@ -32,7 +32,7 @@ class SignalWriter(QtCore.QThread):
 
     # ---- DAQ Control method 3 based on meEEE ----
 
-    def run(self):
+    def create_task(self):
         try:
             self.task = nidaqmx.Task()
         except OSError:
@@ -42,7 +42,8 @@ class SignalWriter(QtCore.QThread):
         channel_name = self.daq_out_name + "/ao0"
         self.task.ao_channels.add_ao_voltage_chan(channel_name)
 
-        buffer_length = self.write_chunk_size * 4
+        signals_in_buffer = 4
+        buffer_length = self.write_chunk_size * signals_in_buffer
         self.task.timing.cfg_samp_clk_timing(rate=self.signal_rate,
                                              samps_per_chan=buffer_length,
                                              sample_mode=AcquisitionType.CONTINUOUS)
@@ -53,34 +54,37 @@ class SignalWriter(QtCore.QThread):
         print("Voltage is: %.2f, Frequency is: %.2f Hz" % (self.voltage, self.frequency))
 
         # fill the buffer
-        for i in range(3):
-            wave = self.WaveGen[0].generate_wave(self.voltage,
-                                                 self.frequency,
-                                                 self.signal_rate,
-                                                 self.write_chunk_size)
-            self.task.write(data=wave, timeout=2)
+        for i in range(signals_in_buffer):
+            self.write_signal_to_buffer()
 
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-        self.signal_time = 1000 // self.chunks_per_second
-        self.timer.timeout.connect(self.callback)
-        print("Timer not started")
-        self.timer.start(self.signal_time)
-        print("Timer started")
+        self.signal_time = 1000 / self.chunks_per_second
+        self.timer.timeout.connect(self.write_signal_to_buffer)
 
-        while self.is_running:
-            pass
-
-        print("Thread ending, closing task")
-        self.task.close()
-
-    def callback(self):
+    def write_signal_to_buffer(self):
         print("Writing wave to task")
         wave = self.WaveGen[0].generate_wave(self.voltage,
                                              self.frequency,
                                              self.signal_rate,
                                              self.write_chunk_size)
         self.task.write(wave)
+
+    def resume(self):
+        print("Signal writer resumed")
+        self.timer.start()
+        self.write_signal_to_buffer()
+        self.task.start()
+
+    def pause(self):
+        print("Signal writer paused")
+        self.timer.stop()
+        self.task.stop()
+
+    def end(self):
+        print("Signal writer stopped")
+        self.timer.stop()
+        self.task.close()
 
     # ---- DAQ Control method 2 based on tenss_Python_DAQ_examples ----
     # This method one output waveform that has several periods, and repeated sends
@@ -153,6 +157,67 @@ class SignalWriter(QtCore.QThread):
         for ch in range(NUM_CHANNELS):
             output[ch] = self.WaveGen[ch].generate_wave(volt, freq, signal_rate, chunk_size)
         return output
+
+
+class DebugSignalGenerator(QtCore.QObject):
+    """
+    Used as debug signal generator to create a waveform while debugging to create waveforms
+    without initializing NI method that can raise errors
+    """
+
+    newData = QtCore.pyqtSignal(object)
+
+    def __init__(self, voltage, frequency, sample_rate, sample_size):
+        super().__init__()
+
+        self.is_running = False
+
+        self.voltage = voltage
+        self.frequency = frequency
+        self.sample_rate = sample_rate
+        self.sample_size = sample_size
+        self.output = np.empty(shape=(1, self.sample_size))
+
+        self.wave_gen = WaveGenerator()
+
+        self.timer = QtCore.QTimer()
+        self.timer.setTimerType(QtCore.Qt.PreciseTimer)
+
+        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
+        self.timer.timeout.connect(self.callback)
+
+        # while self.is_running:
+        #     self.output = wave_gen.generate_wave(self.voltage,
+        #                                          self.frequency,
+        #                                          self.sample_rate,
+        #                                          self.chunk_size)
+        #     self.output = np.around(self.output, 4)
+        #     self.output = self.output.reshape((1, self.chunk_size))
+        #     # print(self.output)
+        #     self.newData.emit(self.output)
+        #     time.sleep(self.chunk_size / self.sample_rate)
+
+    def resume(self):
+        print("Signal resumed")
+        self.is_running = True
+        self.callback()
+        self.timer.start(self.signal_time)
+
+    def pause(self):
+        print("Signal paused")
+        self.is_running = False
+        self.timer.stop()
+
+    def callback(self):
+        print("Callback called")
+        self.output = self.wave_gen.generate_wave(self.voltage,
+                                                  self.frequency,
+                                                  self.sample_rate,
+                                                  self.sample_size)
+        self.output = np.around(self.output, 4)
+        self.output = self.output.reshape((1, self.sample_size))
+        # print(self.output)
+        self.newData.emit(self.output)
 
 
 # creates the sine wave to output

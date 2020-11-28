@@ -50,38 +50,40 @@ class MainWindow(QMainWindow):
             self.read_thread.incoming_data.connect(self.plotter.update_plot)
             self.read_thread.start()
 
-            # initiate write threads for analog output
-            self.write_thread = SignalWriter(voltage=2,
-                                             frequency=4,
-                                             sample_rate=4000,
-                                             chunks_per_sec=2)
-            self.write_thread.create_task()
+            # initiate writer for analog output
+            # not handled on separate thread b/c not blocking
+            self.writer = SignalWriter(voltage=2,
+                                       frequency=4,
+                                       sample_rate=4000,
+                                       chunks_per_sec=2)
+            self.writer.create_task()
 
         # Debugging without NI instrument
         else:
-            # read from a waveform generator
-            self.write_thread = DebugSignalGenerator(voltage=1,
-                                                     frequency=5,
+            # Use software signal generator and read from that
+            self.debug_writer = DebugSignalGenerator(voltage=1,
+                                                     frequency=5.23,
                                                      sample_rate=500,
-                                                     sample_size=500)
-            self.write_thread.newData.connect(self.plotter.update_plot)
+                                                     sample_size=100)
+            self.debug_writer.newData.connect(self.plotter.update_plot)
 
     @pyqtSlot()
     def button_on_click(self):
         if not DEBUG_MODE:
-            if self.write_thread.is_running:
+            if self.writer.is_running:
                 print("Stopped DAQ signal")
-                self.write_thread.stop_signal()
+                self.writer.stop_signal()
                 self.b1.setText("Press to start signal")
             else:
                 print("Started DAQ signal")
-                self.write_thread.start_signal()
+                self.writer.start_signal()
                 self.b1.setText("Press to stop signal")
         else:
-            if not self.write_thread.is_running:
-                self.write_thread.start()
-                self.b1.setText("Signal outputting")
-                print("Started Debug signal")
+            if self.debug_writer.is_running:
+                self.debug_writer.pause()
+            else:
+                self.debug_writer.resume()
+
 
     def closeEvent(self, event):
         print("Closing...")
@@ -89,8 +91,9 @@ class MainWindow(QMainWindow):
             self.read_thread.is_running = False
             self.read_thread.wait()
 
-        self.write_thread.is_running = False
-        self.write_thread.wait()
+            self.writer.is_running = False
+            self.writer.end()
+
 
 
 class SignalPlot(pg.PlotWidget):
