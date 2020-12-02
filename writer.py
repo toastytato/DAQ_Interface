@@ -45,10 +45,12 @@ class SignalWriter(QtCore.QObject):
         signals_in_buffer = 4
         buffer_length = self.write_chunk_size * signals_in_buffer
         self.task.timing.cfg_samp_clk_timing(rate=self.signal_rate,
-                                             samps_per_chan=buffer_length,
+                                             # samps_per_chan=buffer_length,
                                              sample_mode=AcquisitionType.CONTINUOUS)
 
         self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
+        self.task.out_stream.output_buf_size = buffer_length
+
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
         print("Voltage is: %.2f, Frequency is: %.2f Hz" % (self.voltage, self.frequency))
