@@ -45,26 +45,26 @@ class MainWindow(QMainWindow):
         # When NI instrument is attached
         if not DEBUG_MODE:
             # initiate read threads for analog input
-            self.read_thread = SignalReader(sample_rate=500,
-                                            sample_size=500)
+            self.read_thread = SignalReader(sample_rate=PARAMS["reader"]["sample_rate"],
+                                            sample_size=PARAMS["reader"]["sample_size"])
             self.read_thread.incoming_data.connect(self.plotter.update_plot)
             self.read_thread.start()
 
             # initiate writer for analog output
             # not handled on separate thread b/c not blocking
-            self.writer = SignalWriter(voltage=2,
-                                       frequency=5.5,
-                                       sample_rate=2000,
-                                       chunks_per_sec=2)
+            self.writer = SignalWriter(voltage=PARAMS["writer"]["voltage"],
+                                       frequency=PARAMS["writer"]["frequency"],
+                                       sample_rate=PARAMS["writer"]["sample_rate"],
+                                       chunks_per_sec=PARAMS["writer"]["chunks_per_sec"])
             self.writer.create_task()
 
         # Debugging without NI instrument
         else:
             # Use software signal generator and read from that
-            self.debug_writer = DebugSignalGenerator(voltage=1,
-                                                     frequency=5.23,
-                                                     sample_rate=500,
-                                                     sample_size=250)
+            self.debug_writer = DebugSignalGenerator(voltage=PARAMS["debugger"]["voltage"],
+                                                     frequency=PARAMS["debugger"]["frequency"],
+                                                     sample_rate=PARAMS["debugger"]["sample_rate"],
+                                                     sample_size=PARAMS["debugger"]["sample_size"])
             self.debug_writer.newData.connect(self.plotter.update_plot)
 
     @pyqtSlot()

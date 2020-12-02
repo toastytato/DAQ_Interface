@@ -56,7 +56,7 @@ class SignalWriter(QtCore.QThread):
         print("Voltage is: %.2f, Frequency is: %.2f Hz" % (self.voltage, self.frequency))
 
         # fill the buffer
-        # self.write_signal_to_buffer()
+        self.write_signal_to_buffer()
 
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
@@ -78,6 +78,7 @@ class SignalWriter(QtCore.QThread):
         try:
             self.task.write(wave)
         except Exception as e:
+            print("Error writing:")
             print(e)
             return
 
@@ -97,6 +98,7 @@ class SignalWriter(QtCore.QThread):
     def end(self):
         print("Signal writer stopped")
         self.is_running = False
+        self.exit = True
         self.timer.stop()
         self.task.close()
 
