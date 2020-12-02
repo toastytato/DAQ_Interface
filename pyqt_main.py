@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
             self.debug_writer = DebugSignalGenerator(voltage=1,
                                                      frequency=5.23,
                                                      sample_rate=500,
-                                                     sample_size=100)
+                                                     sample_size=250)
             self.debug_writer.newData.connect(self.plotter.update_plot)
 
     @pyqtSlot()

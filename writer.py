@@ -62,6 +62,8 @@ class SignalWriter(QtCore.QThread):
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.signal_time = 1000 / self.chunks_per_second
         self.timer.timeout.connect(self.write_signal_to_buffer)
+
+        # start thread
         self.start()
 
     def run(self):
@@ -73,13 +75,17 @@ class SignalWriter(QtCore.QThread):
                                              self.frequency,
                                              self.signal_rate,
                                              self.write_chunk_size)
-        self.task.write(wave)
+        try:
+            self.task.write(wave)
+        except Exception as e:
+            print(e)
+            return
 
     def resume(self):
         print("Signal writer resumed")
         self.is_running = True
         self.write_signal_to_buffer()
-        self.timer.start()
+        self.timer.start(self.signal_time)
         self.task.start()
 
     def pause(self):
@@ -193,6 +199,8 @@ class DebugSignalGenerator(QtCore.QThread):
 
         self.signal_time = 1000 * (self.sample_size / self.sample_rate)
         self.timer.timeout.connect(self.callback)
+
+        # start thread
         self.start()
 
     def run(self):
