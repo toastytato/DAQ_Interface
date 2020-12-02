@@ -54,8 +54,7 @@ class SignalWriter(QtCore.QObject):
         print("Voltage is: %.2f, Frequency is: %.2f Hz" % (self.voltage, self.frequency))
 
         # fill the buffer
-        for i in range(signals_in_buffer):
-            self.write_signal_to_buffer()
+        self.write_signal_to_buffer()
 
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
