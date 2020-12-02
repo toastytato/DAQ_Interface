@@ -72,13 +72,13 @@ class MainWindow(QMainWindow):
         if not DEBUG_MODE:
             if self.writer.is_running:
                 print("Stopped DAQ signal")
-                self.writer.stop_signal()
+                self.writer.pause()
                 self.b1.setText("Press to start signal")
             else:
                 print("Started DAQ signal")
-                self.writer.start_signal()
+                self.writer.resume()
                 self.b1.setText("Press to stop signal")
-        else:
+        else:   # if debugging
             if self.debug_writer.is_running:
                 self.debug_writer.pause()
             else:
