@@ -9,7 +9,7 @@ from pyqtgraph.Qt import QtCore
 from constants import *
 
 
-class SignalWriter(QtCore.QObject):
+class SignalWriter(QtCore.QThread):
 
     def __init__(self, voltage, frequency, sample_rate, chunks_per_sec, dev_name='Dev1'):
         super().__init__()
@@ -62,6 +62,10 @@ class SignalWriter(QtCore.QObject):
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.signal_time = 1000 / self.chunks_per_second
         self.timer.timeout.connect(self.write_signal_to_buffer)
+        self.start()
+
+    def run(self):
+        self.exec_()
 
     def write_signal_to_buffer(self):
         print("Writing wave to task")
@@ -163,7 +167,7 @@ class SignalWriter(QtCore.QObject):
         return output
 
 
-class DebugSignalGenerator(QtCore.QObject):
+class DebugSignalGenerator(QtCore.QThread):
     """
     Used as debug signal generator to create a waveform while debugging to create waveforms
     without initializing NI method that can raise errors
@@ -189,6 +193,10 @@ class DebugSignalGenerator(QtCore.QObject):
 
         self.signal_time = 1000 * (self.sample_size / self.sample_rate)
         self.timer.timeout.connect(self.callback)
+        self.start()
+
+    def run(self):
+        self.exec_()
 
         # while self.is_running:
         #     self.output = wave_gen.generate_wave(self.voltage,
