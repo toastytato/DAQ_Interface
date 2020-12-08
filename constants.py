@@ -24,9 +24,9 @@ TIME_WINDOW = 2
 # parameters for IO and debugger
 PARAMS = {
     "writer": {
-        "voltage": [2],
-        "frequency": [5.5],
-        "sample_rate": 2000,
+        "voltage": [2, 1],
+        "frequency": [10, 5],
+        "sample_rate": 4000,
         "chunks_per_sec": 2
     },
     "reader": {

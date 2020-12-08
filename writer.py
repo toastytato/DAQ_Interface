@@ -26,9 +26,9 @@ class SignalWriter(QtCore.QObject):
         if len(voltage) != len(frequency):
             print("Error: voltage list size not the same as frequency list size")
 
-        num_channels = len(voltage)
-        self.wave_gen = [WaveGenerator() for i in range(num_channels)]
-        self.output_waveform = np.empty(shape=(num_channels, self.write_chunk_size))
+        self.num_channels = len(voltage)
+        self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
+        self.output_waveform = np.empty(shape=(self.num_channels, self.write_chunk_size))
 
         self.voltage = voltage
         self.frequency = frequency
@@ -42,8 +42,9 @@ class SignalWriter(QtCore.QObject):
             print("DAQ is not connected, task could not be created")
             return
 
-        channel_name = self.daq_out_name + "/ao0"
-        self.task.ao_channels.add_ao_voltage_chan(channel_name)
+        for i in range(self.num_channels):
+            channel_name = self.daq_out_name + "/ao" + str(i)
+            self.task.ao_channels.add_ao_voltage_chan(channel_name)
 
         signals_in_buffer = 4
         buffer_length = self.write_chunk_size * signals_in_buffer
