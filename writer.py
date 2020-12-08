@@ -53,7 +53,7 @@ class SignalWriter(QtCore.QObject):
                                              sample_mode=AcquisitionType.CONTINUOUS)
 
         self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
-        # self.task.out_stream.output_buf_size = buffer_length
+        self.task.out_stream.output_buf_size = buffer_length
 
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
