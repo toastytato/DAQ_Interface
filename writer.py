@@ -57,7 +57,7 @@ class SignalWriter(QtCore.QObject):
 
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
-        print("Voltage is: %.2f, Frequency is: %.2f Hz" % (self.voltage, self.frequency))
+        print("Voltage is: ", self.voltage, " -- Frequency is: ", self.frequency)
 
         self.writer = AnalogMultiChannelWriter(self.task.out_stream)
 
