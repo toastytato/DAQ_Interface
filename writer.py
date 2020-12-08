@@ -69,11 +69,11 @@ class SignalWriter(QtCore.QObject):
         self.signal_time = 1000 / self.chunks_per_second
         self.timer.timeout.connect(self.write_signal_to_buffer)
 
-        # start thread (calls self.run)
-        self.start()
-
-    def run(self):
-        self.exec_()
+    #     # start thread (calls self.run)
+    #     self.start()
+    #
+    # def run(self):
+    #     self.exec_()
 
     def write_signal_to_buffer(self):
         print("Writing wave to task")
