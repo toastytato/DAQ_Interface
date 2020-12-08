@@ -1,15 +1,14 @@
-from threading import Event
-
 import nidaqmx
 import numpy as np
 from nidaqmx.constants import AcquisitionType, RegenerationMode
+from nidaqmx.stream_writers import AnalogMultiChannelWriter
 from pyqtgraph.Qt import QtCore
 
 # --- From DAQ Control --- #
 from constants import *
 
 
-class SignalWriter(QtCore.QThread):
+class SignalWriter(QtCore.QObject):
 
     def __init__(self, voltage, frequency, sample_rate, chunks_per_sec, dev_name='Dev1'):
         super().__init__()
@@ -18,14 +17,18 @@ class SignalWriter(QtCore.QThread):
 
         self.is_running = False
         self.exit = False
-        self.start_thread_flag = Event()
+
         self.daq_out_name = dev_name
         self.signal_rate = sample_rate  # signals per second
         self.chunks_per_second = chunks_per_sec
         self.write_chunk_size = self.signal_rate // self.chunks_per_second
         # size of chunk to write (nearest floor integer)
-        self.WaveGen = [WaveGenerator()] * NUM_CHANNELS
-        self.waveforms = np.empty(NUM_CHANNELS)
+        if len(voltage) != len(frequency):
+            print("Error: voltage list size not the same as frequency list size")
+
+        num_channels = len(voltage)
+        self.wave_gen = [WaveGenerator() for i in range(num_channels)]
+        self.output_waveform = np.empty(shape=(num_channels, self.write_chunk_size))
 
         self.voltage = voltage
         self.frequency = frequency
@@ -45,15 +48,17 @@ class SignalWriter(QtCore.QThread):
         signals_in_buffer = 4
         buffer_length = self.write_chunk_size * signals_in_buffer
         self.task.timing.cfg_samp_clk_timing(rate=self.signal_rate,
-                                             # samps_per_chan=buffer_length,
+                                             samps_per_chan=buffer_length,
                                              sample_mode=AcquisitionType.CONTINUOUS)
 
         self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
-        self.task.out_stream.output_buf_size = buffer_length
+        # self.task.out_stream.output_buf_size = buffer_length
 
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
         print("Voltage is: %.2f, Frequency is: %.2f Hz" % (self.voltage, self.frequency))
+
+        self.writer = AnalogMultiChannelWriter(self.task.out_stream)
 
         # fill the buffer
         self.write_signal_to_buffer()
@@ -71,12 +76,13 @@ class SignalWriter(QtCore.QThread):
 
     def write_signal_to_buffer(self):
         print("Writing wave to task")
-        wave = self.WaveGen[0].generate_wave(self.voltage,
-                                             self.frequency,
-                                             self.signal_rate,
-                                             self.write_chunk_size)
+        for i in range(NUM_CHANNELS):
+            self.output_waveform[i] = self.wave_gen[i].generate_wave(self.voltage[i],
+                                                                     self.frequency[i],
+                                                                     self.signal_rate,
+                                                                     self.write_chunk_size)
         try:
-            self.task.write(wave)
+            self.writer.write_many_sample(self.output_waveform)
         except Exception as e:
             print("Error writing:")
             print(e)
@@ -102,80 +108,8 @@ class SignalWriter(QtCore.QThread):
         self.timer.stop()
         self.task.close()
 
-    # ---- DAQ Control method 2 based on tenss_Python_DAQ_examples ----
-    # This method one output waveform that has several periods, and repeated sends
-    # that same signal to the DAQ.
-    # Problem is that you can write in the middle of a waveform since it writes the
-    # first waveform you create multiple times. You can't change the waveform midway
-    # without stopping the task.
 
-    # def create_task(self):
-    #     try:
-    #         self.task = nidaqmx.Task()
-    #     except OSError:
-    #         print("DAQ is not connected, task could not be created")
-    #         return
-    #
-    #     channel_name = self.daq_out_name + "/ao0"
-    #     self.task.ao_channels.add_ao_voltage_chan(channel_name)
-    #
-    #     buffer_length = self.write_chunk_size * 4
-    #     self.task.timing.cfg_samp_clk_timing(rate=self.signal_rate,
-    #                                          samps_per_chan=buffer_length,
-    #                                          sample_mode=AcquisitionType.CONTINUOUS)
-    #
-    #     self.task.out_stream.regen_mode = RegenerationMode.ALLOW_REGENERATION
-    #     print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
-    #
-    #     print("Voltage is: %.2f, Frequency is: %.2f Hz" % (self.voltage, self.frequency))
-    #     # wave = self.WaveGen[0].generate_wave(self.voltage,
-    #     #                                      self.frequency,
-    #     #                                      self.signal_rate,
-    #     #                                      self.write_chunk_size)
-    #     wave = self.WaveGen[0].generate_n_periods(self.voltage,
-    #                                               self.frequency,
-    #                                               self.signal_rate,
-    #                                               num=4)
-    #     self.task.write(data=wave, timeout=2)
-    #
-    # def start_signal(self):
-    #     if not self.task_created():
-    #         return
-    #
-    #     self.is_running = True
-    #     self.task.start()
-    #
-    # def stop_signal(self):
-    #     if not self.task_created():
-    #         return
-    #
-    #     self.is_running = False
-    #     self.task.stop()
-    #
-    # def quit(self):
-    #     self.is_running = False
-    #     self.task.close()
-    #
-    # def task_created(self):
-    #     """
-    #     Return True if a task has been created
-    #     """
-    #
-    #     if isinstance(self.task, nidaqmx.task.Task):
-    #         return True
-    #     else:
-    #         print('No task created: run the create_task method')
-    #         return False
-
-    # puts all waves into a single array for AnalogMultiChannelWriter
-    def package_waves(self, volt, freq, signal_rate, chunk_size):
-        output = np.empty(shape=(NUM_CHANNELS, chunk_size))
-        for ch in range(NUM_CHANNELS):
-            output[ch] = self.WaveGen[ch].generate_wave(volt, freq, signal_rate, chunk_size)
-        return output
-
-
-class DebugSignalGenerator(QtCore.QThread):
+class DebugSignalGenerator(QtCore.QObject):
     """
     Used as debug signal generator to create a waveform while debugging to create waveforms
     without initializing NI method that can raise errors
@@ -187,14 +121,20 @@ class DebugSignalGenerator(QtCore.QThread):
         super().__init__()
 
         self.is_running = False
+        self.event_trigger = False
+        self.exit = False
 
+        if len(voltage) != len(frequency):
+            print("Error: voltage list size not the same as frequency list size")
+
+        num_channels = len(voltage)
         self.voltage = voltage
         self.frequency = frequency
         self.sample_rate = sample_rate
         self.sample_size = sample_size
-        self.output = np.empty(shape=(1, self.sample_size))
+        self.output = np.empty(shape=(num_channels, self.sample_size))
 
-        self.wave_gen = WaveGenerator()
+        self.wave_gen = [WaveGenerator() for i in range(num_channels)]
 
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
@@ -202,22 +142,7 @@ class DebugSignalGenerator(QtCore.QThread):
         self.signal_time = 1000 * (self.sample_size / self.sample_rate)
         self.timer.timeout.connect(self.callback)
 
-        # start thread
-        self.start()
-
-    def run(self):
-        self.exec_()
-
-        # while self.is_running:
-        #     self.output = wave_gen.generate_wave(self.voltage,
-        #                                          self.frequency,
-        #                                          self.sample_rate,
-        #                                          self.chunk_size)
-        #     self.output = np.around(self.output, 4)
-        #     self.output = self.output.reshape((1, self.chunk_size))
-        #     # print(self.output)
-        #     self.newData.emit(self.output)
-        #     time.sleep(self.chunk_size / self.sample_rate)
+        print('Init doing stuff in:', QtCore.QThread.currentThread())
 
     def resume(self):
         print("Signal resumed")
@@ -227,19 +152,25 @@ class DebugSignalGenerator(QtCore.QThread):
 
     def pause(self):
         print("Signal paused")
+        print('Slot doing stuff in:', QtCore.QThread.currentThread())
+
         self.is_running = False
         self.timer.stop()
 
     def callback(self):
         print("Callback called")
-        self.output = self.wave_gen.generate_wave(self.voltage,
-                                                  self.frequency,
-                                                  self.sample_rate,
-                                                  self.sample_size)
-        self.output = np.around(self.output, 4)
-        self.output = self.output.reshape((1, self.sample_size))
+        for i in range(len(self.output)):
+            self.output[i] = self.wave_gen[i].generate_wave(self.voltage[i],
+                                                            self.frequency[i],
+                                                            self.sample_rate,
+                                                            self.sample_size)
+
         # print(self.output)
+        print(self.output)
         self.newData.emit(self.output)
+
+    def end(self):
+        self.exit = True
 
 
 # creates the sine wave to output
@@ -307,18 +238,8 @@ if __name__ == '__main__':
 
     writer.start()
 
-    # writer.create_task()
-    # writer.start_signal()
-    # wave_gen = WaveGenerator()
-    # waveform = wave_gen.generate_wave(voltage=writer.voltage,
-    #                                   frequency=writer.frequency,
-    #                                   sample_rate=writer.signal_rate,
-    #                                   samples_per_chunk=writer.signal_rate // 4)
-    # plt.plot(wave_gen.output_times, waveform)
-    # plt.show()
-
     input("Press return to stop")
-    writer.is_running = False
+    writer.end()
 
     # writer.stop_signal()
 

@@ -43,6 +43,7 @@ class MainWindow(QMainWindow):
 
     def init_threads(self):
         # When NI instrument is attached
+
         if not DEBUG_MODE:
             # initiate read threads for analog input
             self.read_thread = SignalReader(sample_rate=PARAMS["reader"]["sample_rate"],
@@ -81,9 +82,10 @@ class MainWindow(QMainWindow):
         else:   # if debugging
             if self.debug_writer.is_running:
                 self.debug_writer.pause()
+                self.b1.setText("Press to resume")
             else:
                 self.debug_writer.resume()
-
+                self.b1.setText("Press to pause")
 
     def closeEvent(self, event):
         print("Closing...")
@@ -93,7 +95,8 @@ class MainWindow(QMainWindow):
 
             self.writer.is_running = False
             self.writer.end()
-
+        else:
+            self.debug_writer.end()
 
 
 class SignalPlot(pg.PlotWidget):
