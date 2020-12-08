@@ -92,7 +92,7 @@ class SignalWriter(QtCore.QObject):
     def resume(self):
         print("Signal writer resumed")
         self.is_running = True
-        # self.write_signal_to_buffer()
+        self.write_signal_to_buffer()
         self.timer.start(self.signal_time)
         self.task.start()
 
