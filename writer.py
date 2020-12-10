@@ -86,7 +86,7 @@ class SignalWriter(QtCore.QObject):
                                                                          self.signal_rate,
                                                                          self.write_chunk_size)
             else:
-                self.output_waveform[i] = np.zeros(self.sample_size)
+                self.output_waveform[i] = np.zeros(self.write_chunk_size)
         try:
             self.writer.write_many_sample(self.output_waveform)
         except Exception as e:
