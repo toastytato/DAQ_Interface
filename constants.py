@@ -5,7 +5,7 @@
 DEBUG_MODE = True
 
 # Number of channels to sample/display
-NUM_CHANNELS = 1
+NUM_CHANNELS = 2
 # Refresh rate for GUI display and slider sampling
 REFRESH_RATE = 24
 REFRESH_PERIOD = int(1000/REFRESH_RATE)     # in ms
@@ -34,9 +34,9 @@ PARAMS = {
         "sample_size": 500
     },
     "debugger": {
-        "voltage": [1, 2],
-        "frequency": [.5645, 2.5],
-        "sample_rate": 500,
+        "voltage": [5, 2],
+        "frequency": [60, 2.5],
+        "sample_rate": 1000,
         "sample_size": 250
     }
 }

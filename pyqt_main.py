@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QMainWindow, QLabel, QGridLayout, QWidget,
 # --- From DAQ Control --- #
 from reader import *
 from writer import *
+from parameters import *
 
 
 class MainWindow(QMainWindow):
@@ -19,7 +20,8 @@ class MainWindow(QMainWindow):
         self.init_threads()
 
     def init_ui(self):
-        self.setMinimumSize(QSize(720, 480))
+        self.resize(800, 850)
+        self.setMinimumSize(QSize(720, 720))
         self.setWindowTitle("DAQ Interface")
 
         self.mainbox = QWidget(self)
@@ -34,15 +36,24 @@ class MainWindow(QMainWindow):
         self.b1 = QPushButton('Start Signal Out')
         self.b1.clicked.connect(self.button_on_click)
 
-        self.t1 = QLineEdit()
+        self.param_tree = MyParamTree()  # From ParameterTree.py
+        self.param_tree.paramChange.connect(
+            self.change)  # Connect the output signal from changes in the param tree to change
 
         layout.addWidget(title)
         layout.addWidget(self.plotter)
-        layout.addWidget(self.t1)
         layout.addWidget(self.b1)
+        layout.addWidget(self.param_tree)
 
     def init_threads(self):
         # When NI instrument is attached
+
+        voltages = [0]*NUM_CHANNELS
+        frequencies = [0]*NUM_CHANNELS
+        for i in range(NUM_CHANNELS):
+            branch = 'Channel ' + str(i)
+            voltages[i] = self.param_tree.get_param_value(branch, 'Voltage RMS')
+            frequencies[i] = self.param_tree.get_param_value(branch, 'Frequency')
 
         if not DEBUG_MODE:
             # initiate read threads for analog input
@@ -53,8 +64,8 @@ class MainWindow(QMainWindow):
 
             # initiate writer for analog output
             # not handled on separate thread b/c not blocking
-            self.writer = SignalWriter(voltage=PARAMS["writer"]["voltage"],
-                                       frequency=PARAMS["writer"]["frequency"],
+            self.writer = SignalWriter(voltage=voltages,
+                                       frequency=frequencies,
                                        sample_rate=PARAMS["writer"]["sample_rate"],
                                        chunks_per_sec=PARAMS["writer"]["chunks_per_sec"])
             self.writer.create_task()
@@ -62,8 +73,8 @@ class MainWindow(QMainWindow):
         # Debugging without NI instrument
         else:
             # Use software signal generator and read from that
-            self.debug_writer = DebugSignalGenerator(voltage=PARAMS["debugger"]["voltage"],
-                                                     frequency=PARAMS["debugger"]["frequency"],
+            self.debug_writer = DebugSignalGenerator(voltage=voltages,
+                                                     frequency=frequencies,
                                                      sample_rate=PARAMS["debugger"]["sample_rate"],
                                                      sample_size=PARAMS["debugger"]["sample_size"])
             self.debug_writer.newData.connect(self.plotter.update_plot)
@@ -79,13 +90,30 @@ class MainWindow(QMainWindow):
                 print("Started DAQ signal")
                 self.writer.resume()
                 self.b1.setText("Press to stop signal")
-        else:   # if debugging
+        else:  # if debugging
             if self.debug_writer.is_running:
                 self.debug_writer.pause()
                 self.b1.setText("Press to resume")
             else:
                 self.debug_writer.resume()
                 self.b1.setText("Press to pause")
+
+    def change(self, param, changes):
+        # param: the GroupParameter object that holds the Channel Params
+        # changes: list that contains [ParameterObject, 'value', data]
+
+        for param, change, data in changes:
+            path = self.param_tree.p.childPath(param)
+
+            ch = int(path[0].split()[1])    # splits 'Channel 0' into 0
+
+            if path[1] == 'Toggle Output':
+                self.debug_writer.output_state[ch] = data
+            if path[1] == 'Voltage RMS':
+                self.debug_writer.voltage[ch] = data
+            if path[1] == 'Frequency':
+                self.debug_writer.frequency[ch] = data
+
 
     def closeEvent(self, event):
         print("Closing...")

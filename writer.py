@@ -121,7 +121,6 @@ class DebugSignalGenerator(QtCore.QObject):
     def __init__(self, voltage, frequency, sample_rate, sample_size):
         super().__init__()
 
-        self.is_running = False
         self.event_trigger = False
         self.exit = False
 
@@ -129,6 +128,9 @@ class DebugSignalGenerator(QtCore.QObject):
             print("Error: voltage list size not the same as frequency list size")
 
         num_channels = len(voltage)
+
+        self.is_running = False
+        self.output_state = [False] * num_channels
         self.voltage = voltage
         self.frequency = frequency
         self.sample_rate = sample_rate
@@ -143,8 +145,6 @@ class DebugSignalGenerator(QtCore.QObject):
         self.signal_time = 1000 * (self.sample_size / self.sample_rate)
         self.timer.timeout.connect(self.callback)
 
-        print('Init doing stuff in:', QtCore.QThread.currentThread())
-
     def resume(self):
         print("Signal resumed")
         self.is_running = True
@@ -154,23 +154,23 @@ class DebugSignalGenerator(QtCore.QObject):
     def pause(self):
         print("Signal paused")
         print('Slot doing stuff in:', QtCore.QThread.currentThread())
-
         self.is_running = False
         self.timer.stop()
 
     def callback(self):
-        print("Callback called")
         for i in range(len(self.output)):
-            self.output[i] = self.wave_gen[i].generate_wave(self.voltage[i],
-                                                            self.frequency[i],
-                                                            self.sample_rate,
-                                                            self.sample_size)
+            if self.output_state[i]:
+                self.output[i] = self.wave_gen[i].generate_wave(self.voltage[i],
+                                                                self.frequency[i],
+                                                                self.sample_rate,
+                                                                self.sample_size)
+            else:
+                self.output[i] = np.zeros(self.sample_size)
 
-        # print(self.output)
-        print(self.output)
         self.newData.emit(self.output)
 
     def end(self):
+        self.is_running = False
         self.exit = True
 
 
@@ -203,6 +203,8 @@ class WaveGenerator:
         :return: np.array with waveform of input params
 
         """
+        if frequency == 0:
+            return np.full(shape=samples_per_chunk, fill_value=voltage)
         if self.last_freq != frequency:
             self.counter = 0
             self.last_freq = frequency
