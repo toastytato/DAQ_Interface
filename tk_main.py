@@ -114,11 +114,11 @@ def refresh_io():
         if output_mode == 'AC' and active_channel:
             frequency = channel_views[ch].controls_view.frequency_slider.get()
             writer_thread.mode = 'AC'
-            writer_thread.frequency = frequency
-            writer_thread.voltage = voltage
+            writer_thread.frequencies = frequency
+            writer_thread.voltages = voltage
         elif output_mode == 'DC' and active_channel:
             writer_thread.mode = 'DC'
-            writer_thread.voltage = voltage
+            writer_thread.voltages = voltage
 
     root.after(POLLING_PERIOD, refresh_io)
 
@@ -261,8 +261,8 @@ if __name__ == '__main__':
     GraphPanel.grid(row=0, column=0)
     ControlsPanel.grid(row=1, column=0)
 
-    writer_thread = SignalWriter(voltage=2,
-                                 frequency=4,
+    writer_thread = SignalWriter(voltages=2,
+                                 frequencies=4,
                                  sample_rate=2000,
                                  chunks_per_sec=2)
 

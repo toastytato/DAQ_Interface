@@ -10,7 +10,7 @@ from constants import *
 
 class SignalWriter(QtCore.QObject):
 
-    def __init__(self, voltage, frequency, sample_rate, chunks_per_sec, dev_name='Dev1'):
+    def __init__(self, voltages, frequencies, sample_rate, sample_size, dev_name='Dev1'):
         super().__init__()
         self.writer = None
         self.task_counter = 0
@@ -20,18 +20,19 @@ class SignalWriter(QtCore.QObject):
 
         self.daq_out_name = dev_name
         self.signal_rate = sample_rate  # signals per second
-        self.chunks_per_second = chunks_per_sec
-        self.write_chunk_size = self.signal_rate // self.chunks_per_second
+        self.write_chunk_size = sample_size
+        self.chunks_per_second = sample_rate / sample_size
         # size of chunk to write (nearest floor integer)
-        if len(voltage) != len(frequency):
-            print("Error: voltage list size not the same as frequency list size")
+        if len(voltages) != len(frequencies):
+            print("ERROR: voltage list size not the same as frequency list size")
 
-        self.num_channels = len(voltage)
+        self.num_channels = len(voltages)
+        self.output_state = [False] * self.num_channels
         self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
         self.output_waveform = np.empty(shape=(self.num_channels, self.write_chunk_size))
 
-        self.voltage = voltage
-        self.frequency = frequency
+        self.voltages = voltages
+        self.frequencies = frequencies
 
     # ---- DAQ Control method 3 based on meEEE ----
 
@@ -53,11 +54,12 @@ class SignalWriter(QtCore.QObject):
                                              sample_mode=AcquisitionType.CONTINUOUS)
 
         self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
+        # apparently the samps_per_chan doesn't do much for buffer size
         self.task.out_stream.output_buf_size = buffer_length
 
         print("Regeneration mode is set to: " + str(self.task.out_stream.regen_mode))
 
-        print("Voltage is: ", self.voltage, " -- Frequency is: ", self.frequency)
+        print("Voltage is: ", self.voltages, " -- Frequency is: ", self.frequencies)
 
         self.writer = AnalogMultiChannelWriter(self.task.out_stream)
 
@@ -78,10 +80,13 @@ class SignalWriter(QtCore.QObject):
     def write_signal_to_buffer(self):
         print("Writing wave to task")
         for i in range(NUM_CHANNELS):
-            self.output_waveform[i] = self.wave_gen[i].generate_wave(self.voltage[i],
-                                                                     self.frequency[i],
-                                                                     self.signal_rate,
-                                                                     self.write_chunk_size)
+            if self.output_state[i]:
+                self.output_waveform[i] = self.wave_gen[i].generate_wave(self.voltages[i],
+                                                                         self.frequencies[i],
+                                                                         self.signal_rate,
+                                                                         self.write_chunk_size)
+            else:
+                self.output_waveform[i] = np.zeros(self.sample_size)
         try:
             self.writer.write_many_sample(self.output_waveform)
         except Exception as e:
@@ -118,21 +123,21 @@ class DebugSignalGenerator(QtCore.QObject):
 
     newData = QtCore.pyqtSignal(object)
 
-    def __init__(self, voltage, frequency, sample_rate, sample_size):
+    def __init__(self, voltages, frequencies, sample_rate, sample_size):
         super().__init__()
 
         self.event_trigger = False
         self.exit = False
 
-        if len(voltage) != len(frequency):
+        if len(voltages) != len(frequencies):
             print("Error: voltage list size not the same as frequency list size")
 
-        num_channels = len(voltage)
+        num_channels = len(voltages)
 
         self.is_running = False
         self.output_state = [False] * num_channels
-        self.voltage = voltage
-        self.frequency = frequency
+        self.voltages = voltages
+        self.frequencies = frequencies
         self.sample_rate = sample_rate
         self.sample_size = sample_size
         self.output = np.empty(shape=(num_channels, self.sample_size))
@@ -160,8 +165,8 @@ class DebugSignalGenerator(QtCore.QObject):
     def callback(self):
         for i in range(len(self.output)):
             if self.output_state[i]:
-                self.output[i] = self.wave_gen[i].generate_wave(self.voltage[i],
-                                                                self.frequency[i],
+                self.output[i] = self.wave_gen[i].generate_wave(self.voltages[i],
+                                                                self.frequencies[i],
                                                                 self.sample_rate,
                                                                 self.sample_size)
             else:
@@ -234,8 +239,8 @@ if __name__ == '__main__':
     voltage = input("Input Voltage: ")
     frequency = input("Input Frequency: ")
 
-    writer = SignalWriter(voltage=voltage,
-                          frequency=frequency,
+    writer = SignalWriter(voltages=voltage,
+                          frequencies=frequency,
                           sample_rate=1000,
                           chunks_per_sec=2)
 

@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
-        self.init_threads()
+        self.init_daq_io()
 
     def init_ui(self):
         self.resize(800, 850)
@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         title.setAlignment(QtCore.Qt.AlignHCenter)
         self.plotter = SignalPlot()
 
-        self.b1 = QPushButton('Start Signal Out')
+        self.b1 = QPushButton('Press to start signal out')
         self.b1.clicked.connect(self.button_on_click)
 
         self.param_tree = MyParamTree()  # From ParameterTree.py
@@ -45,15 +45,15 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.b1)
         layout.addWidget(self.param_tree)
 
-    def init_threads(self):
+    def init_daq_io(self):
         # When NI instrument is attached
 
-        voltages = [0]*NUM_CHANNELS
-        frequencies = [0]*NUM_CHANNELS
+        voltages = []
+        frequencies = []
         for i in range(NUM_CHANNELS):
             branch = 'Channel ' + str(i)
-            voltages[i] = self.param_tree.get_param_value(branch, 'Voltage RMS')
-            frequencies[i] = self.param_tree.get_param_value(branch, 'Frequency')
+            voltages.append(self.param_tree.get_param_value(branch, 'Voltage RMS'))
+            frequencies.append(self.param_tree.get_param_value(branch, 'Frequency'))
 
         if not DEBUG_MODE:
             # initiate read threads for analog input
@@ -64,39 +64,32 @@ class MainWindow(QMainWindow):
 
             # initiate writer for analog output
             # not handled on separate thread b/c not blocking
-            self.writer = SignalWriter(voltage=voltages,
-                                       frequency=frequencies,
+            self.writer = SignalWriter(voltages=voltages,
+                                       frequencies=frequencies,
                                        sample_rate=PARAMS["writer"]["sample_rate"],
-                                       chunks_per_sec=PARAMS["writer"]["chunks_per_sec"])
+                                       sample_size=PARAMS["writer"]["sample_size"])
             self.writer.create_task()
 
         # Debugging without NI instrument
         else:
             # Use software signal generator and read from that
-            self.debug_writer = DebugSignalGenerator(voltage=voltages,
-                                                     frequency=frequencies,
-                                                     sample_rate=PARAMS["debugger"]["sample_rate"],
-                                                     sample_size=PARAMS["debugger"]["sample_size"])
-            self.debug_writer.newData.connect(self.plotter.update_plot)
+            self.writer = DebugSignalGenerator(voltages=voltages,
+                                               frequencies=frequencies,
+                                               sample_rate=PARAMS["debugger"]["sample_rate"],
+                                               sample_size=PARAMS["debugger"]["sample_size"])
+            self.writer.newData.connect(self.plotter.update_plot)
 
     @pyqtSlot()
     def button_on_click(self):
-        if not DEBUG_MODE:
-            if self.writer.is_running:
-                print("Stopped DAQ signal")
-                self.writer.pause()
-                self.b1.setText("Press to start signal")
-            else:
-                print("Started DAQ signal")
-                self.writer.resume()
-                self.b1.setText("Press to stop signal")
-        else:  # if debugging
-            if self.debug_writer.is_running:
-                self.debug_writer.pause()
-                self.b1.setText("Press to resume")
-            else:
-                self.debug_writer.resume()
-                self.b1.setText("Press to pause")
+        if self.writer.is_running:
+            print("Stopped DAQ signal")
+            self.writer.pause()
+            self.b1.setText("Press to resume signal")
+        else:
+            print("Started DAQ signal")
+            self.writer.resume()
+            self.b1.setText("Press to pause signal")
+
 
     def change(self, param, changes):
         # param: the GroupParameter object that holds the Channel Params
@@ -105,15 +98,14 @@ class MainWindow(QMainWindow):
         for param, change, data in changes:
             path = self.param_tree.p.childPath(param)
 
-            ch = int(path[0].split()[1])    # splits 'Channel 0' into 0
+            ch = int(path[0].split()[1])  # splits 'Channel 0' into 0
 
             if path[1] == 'Toggle Output':
-                self.debug_writer.output_state[ch] = data
+                self.writer.output_state[ch] = data
             if path[1] == 'Voltage RMS':
-                self.debug_writer.voltage[ch] = data
+                self.writer.voltages[ch] = data
             if path[1] == 'Frequency':
-                self.debug_writer.frequency[ch] = data
-
+                self.writer.frequencies[ch] = data
 
     def closeEvent(self, event):
         print("Closing...")
@@ -124,7 +116,7 @@ class MainWindow(QMainWindow):
             self.writer.is_running = False
             self.writer.end()
         else:
-            self.debug_writer.end()
+            self.writer.end()
 
 
 class SignalPlot(pg.PlotWidget):

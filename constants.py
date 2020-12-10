@@ -27,7 +27,7 @@ PARAMS = {
         "voltage": [2, 1],
         "frequency": [10, 5],
         "sample_rate": 4000,
-        "chunks_per_sec": 2
+        "sample_size": 2000,
     },
     "reader": {
         "sample_rate": 500,
