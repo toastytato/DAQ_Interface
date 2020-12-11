@@ -5,7 +5,7 @@
 DEBUG_MODE = True
 
 # Number of channels to sample/display
-NUM_CHANNELS = 2
+NUM_CHANNELS = 3
 # Refresh rate for GUI display and slider sampling
 REFRESH_RATE = 24
 REFRESH_PERIOD = int(1000/REFRESH_RATE)     # in ms
@@ -21,22 +21,3 @@ CURRENT_SHUNT_RESISTANCE = 1
 # viewing frame time of big graph in seconds
 TIME_WINDOW = 2
 
-# parameters for IO and debugger
-PARAMS = {
-    "writer": {
-        "voltage": [2, 1],
-        "frequency": [10, 5],
-        "sample_rate": 4000,
-        "sample_size": 2000,
-    },
-    "reader": {
-        "sample_rate": 500,
-        "sample_size": 500
-    },
-    "debugger": {
-        "voltage": [5, 2],
-        "frequency": [60, 2.5],
-        "sample_rate": 1000,
-        "sample_size": 250
-    }
-}
