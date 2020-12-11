@@ -12,8 +12,8 @@ class ChannelParamTree(ParameterTree):
 
     def __init__(self):
         super().__init__()
-        default_voltage = 0
-        default_frequency = 0
+        default_voltage = 1
+        default_frequency = 5
 
         self.channel_params = []
         for i in range(NUM_CHANNELS):
@@ -72,7 +72,7 @@ class ConfigParamTree(ParameterTree):
 
     def __init__(self):
         super().__init__()
-        default_sample_rate = 2000
+        default_sample_rate = 1000
         default_sample_size = 1000
 
         self.setting_params = [{
@@ -94,7 +94,7 @@ class ConfigParamTree(ParameterTree):
                      'value': 1000},
                     {'name': 'Sample Size',
                      'type': 'int',
-                     'value': 500}, ]
+                     'value': 1000}, ]
             }]
 
         self.param = Parameter.create(name='setting_params', type='group', children=self.setting_params)
