@@ -1,10 +1,9 @@
 import sys
 
 import pyqtgraph as pg
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import QSize, pyqtSlot
-from PyQt5.QtWidgets import (QMainWindow, QLabel, QGridLayout, QWidget,
-                             QPushButton, QLineEdit)
+from PyQt5 import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 
 # --- From DAQ Control --- #
 from reader import *
@@ -19,9 +18,16 @@ class MainWindow(QMainWindow):
         self.init_ui()
         self.init_daq_io()
 
+        # Connect the output signal from changes in the param tree to change
+        self.b1.clicked.connect(self.button_on_click)
+        self.tabs.currentChanged.connect(self.on_tab_change)
+        self.controls_param_tree.paramChange.connect(self.controls_param_change)
+        self.channel_param_tree.paramChange.connect(self.channels_param_change)
+        self.setting_param_tree.paramChange.connect(self.settings_param_change)
+
     def init_ui(self):
-        self.resize(700, 700) # non maximized size
-        self.setWindowState(QtCore.Qt.WindowMaximized)
+        self.resize(700, 700)  # non maximized size
+        # self.setWindowState(QtCore.Qt.WindowMinimized)
         # self.setMinimumSize(QSize(500, 400))
         self.setWindowTitle("DAQ Interface")
 
@@ -36,31 +42,37 @@ class MainWindow(QMainWindow):
         # self.plotter.setMaximumSize(800, 600)
 
         self.b1 = QPushButton('Press to start signal out')
-        self.b1.clicked.connect(self.button_on_click)
+
+        self.controls_param_tree = ControlsParamTree()
 
         self.channel_param_tree = ChannelParamTree()  # From ParameterTree.py
-        # Connect the output signal from changes in the param tree to change
-        self.channel_param_tree.paramChange.connect(self.change)
-        self.channel_param_tree.setMinimumSize(100, 200)
+        # self.channel_param_tree.setMinimumSize(100, 200)
 
         self.setting_param_tree = ConfigParamTree()
-        self.setting_param_tree.paramChange.connect(self.change)
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.controls_param_tree, "Main Controls")
+        self.tabs.addTab(self.channel_param_tree, "Channels Controls")
+        self.tabs.addTab(self.setting_param_tree, "DAQ Settings")
+        self.tabs.setCurrentIndex(1)
 
         # place widgets in their respective locations
         layout.addWidget(title)  # row, col, rowspan, colspan
         layout.addWidget(self.plotter)
         layout.addWidget(self.b1)
         # layout.addWidget(self.setting_param_tree, 3, 1, 1, 1)
-        layout.addWidget(self.channel_param_tree)
+        layout.addWidget(self.tabs)
 
     def init_daq_io(self):
 
         voltages = []
         frequencies = []
+        shifts = []
         for i in range(NUM_CHANNELS):
             branch = 'Channel ' + str(i)
             voltages.append(self.channel_param_tree.get_param_value(branch, 'Voltage RMS'))
             frequencies.append(self.channel_param_tree.get_param_value(branch, 'Frequency'))
+            shifts.append(self.channel_param_tree.get_param_value(branch, 'Phase Shift'))
 
         # When NI instrument is attached
         if not DEBUG_MODE:
@@ -76,6 +88,7 @@ class MainWindow(QMainWindow):
             self.writer = SignalWriter(
                 voltages=voltages,
                 frequencies=frequencies,
+                shifts=shifts,
                 sample_rate=self.setting_param_tree.get_param_value('Writer Config', 'Sample Rate'),
                 sample_size=self.setting_param_tree.get_param_value('Writer Config', 'Sample Size'), )
             self.writer.create_task()
@@ -86,9 +99,13 @@ class MainWindow(QMainWindow):
             self.writer = DebugSignalGenerator(
                 voltages=voltages,
                 frequencies=frequencies,
+                shifts=shifts,
                 sample_rate=self.setting_param_tree.get_param_value('Writer Config', 'Sample Rate'),
                 sample_size=self.setting_param_tree.get_param_value('Writer Config', 'Sample Size'))
             self.writer.newData.connect(self.plotter.update_plot)
+
+        # pass by reference writer so field generator can manipulate it when it needs to
+        self.field_generator = RotationalFieldGenerator(self.writer)
 
     @pyqtSlot()
     def button_on_click(self):
@@ -101,28 +118,65 @@ class MainWindow(QMainWindow):
             self.writer.resume()
             self.b1.setText("Press to pause signal")
 
-    def change(self, parameter, changes):
+    @pyqtSlot(int)
+    def on_tab_change(self, i):
+        print("changed to tab: ", i)
+
+        if i == 0:
+            self.writer.realign_channels()
+            self.field_generator.resume_signal()
+        elif i == 1:
+            self.writer.realign_channels()
+            for i in range(NUM_CHANNELS):
+                channel = "Channel " + str(i)
+                parent = self.channel_param_tree.param.child(channel)
+                self.writer.output_state[i] = parent.child("Toggle Output").value()
+                self.writer.voltages[i] = parent.child("Voltage RMS").value()
+                self.writer.frequencies[i] = parent.child("Frequency").value()
+                self.writer.shifts[i] = parent.child("Phase Shift").value()
+        elif i == 2:
+            pass
+
+        print(self.channel_param_tree.param.child("Channel 0").child("Toggle Output").value())
+
+    def channels_param_change(self, parameter, changes):
         # parameter: the GroupParameter object that holds the Channel Params
         # changes: list that contains [ParameterObject, 'value', data]
-
         for param, change, data in changes:
 
-            if parameter.name() == 'channel_params':
-                path = self.channel_param_tree.param.childPath(param)
-                ch = int(path[0].split()[1])  # splits 'Channel 0' into 0
+            path = self.channel_param_tree.param.childPath(param)
+            ch = int(path[0].split()[1])  # eg. splits 'Channel 0' into integer 0
 
-                if path[1] == 'Toggle Output':
-                    self.writer.output_state[ch] = data
-                if path[1] == 'Voltage RMS':
-                    self.writer.voltages[ch] = data
-                if path[1] == 'Frequency':
-                    self.writer.frequencies[ch] = data
+            if path[1] == 'Toggle Output':
+                self.writer.output_state[ch] = data
+            if path[1] == 'Voltage RMS':
+                self.writer.voltages[ch] = data
+            if path[1] == 'Frequency':
+                self.writer.frequencies[ch] = data
+            if path[1] == 'Phase Shift':
+                self.writer.shifts[ch] = data
 
-            elif parameter.name() == 'setting_params':
-                path = self.setting_param_tree.param.childPath(param)
+    def controls_param_change(self, parameter, changes):
+        for param, change, data in changes:
 
-                if path[1] == 'Sample Rate':
-                    print('hi')
+            path = self.controls_param_tree.param.childPath(param)
+
+            if path[1] == 'Toggle Output':
+                if data:
+                    self.field_generator.resume_signal()
+                else:
+                    self.field_generator.pause_signal()
+            if path[1] == 'Voltage RMS':
+                self.field_generator.voltage = data
+                print(self.writer.voltages)
+            if path[1] == 'Frequency':
+                self.field_generator.frequency = data
+                print(self.writer.frequencies)
+            if path[1] == 'Arrangement':
+                print(data)
+
+    def settings_param_change(self, parameter, changes):
+        pass
 
     def closeEvent(self, event):
         print("Closing...")
@@ -153,7 +207,7 @@ class SignalPlot(pg.PlotWidget):
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     mainWin = MainWindow()
     mainWin.show()
     sys.exit(app.exec_())

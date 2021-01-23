@@ -1,9 +1,8 @@
 from pyqtgraph.Qt import QtCore
-from pyqtgraph.parametertree import Parameter, ParameterTree
-from PyQt5.QtCore import Qt
+from pyqtgraph.parametertree import *
 import pprint
 
-from constants import *
+from config import *
 
 
 class ChannelParamTree(ParameterTree):
@@ -35,11 +34,15 @@ class ChannelParamTree(ParameterTree):
                      'value': default_frequency,
                      'step': 1,
                      'suffix': 'Hz'},
+                    {'name': 'Phase Shift',
+                     'type': 'float',
+                     'step': 10,
+                     'suffix': u'\N{DEGREE SIGN}'}
                 ]
             }
             self.channel_params.append(param)
 
-        self.param = Parameter.create(name='channel_params', type='group', children=self.channel_params)
+        self.param = Parameter.create(name='channel params', type='group', children=self.channel_params)
         self.setParameters(self.param, showTop=False)
         self.param.sigTreeStateChanged.connect(self.send_change)  # When the params change, send to method to emit.
 
@@ -72,8 +75,8 @@ class ConfigParamTree(ParameterTree):
 
     def __init__(self):
         super().__init__()
-        default_sample_rate = 1000
-        default_sample_size = 1000
+        default_sample_rate = 2000
+        default_sample_size = 500
 
         self.setting_params = [{
             'name': 'Writer Config',
@@ -97,8 +100,9 @@ class ConfigParamTree(ParameterTree):
                      'value': 1000}, ]
             }]
 
-        self.param = Parameter.create(name='setting_params', type='group', children=self.setting_params)
+        self.param = Parameter.create(name='setting params', type='group', children=self.setting_params)
         self.setParameters(self.param, showTop=False)
+        self.param.sigTreeStateChanged.connect(self.send_change)  # When the params change, send to method to emit.
 
     def send_change(self, param, changes):
         self.paramChange.emit(param, changes)
@@ -114,7 +118,62 @@ class ConfigParamTree(ParameterTree):
 
     def print(self):
         print("Settings")
-        pprint.pprint(self.channel_params)
+        pprint.pprint(self.setting_params)
+
+
+class ControlsParamTree(ParameterTree):
+    paramChange = QtCore.pyqtSignal(object, object)
+
+    def __init__(self):
+        super().__init__()
+
+        default_frequency = 0
+        default_voltage = 0
+
+        self.control_params = [{
+            'name': 'Rotating Field',
+            'type': 'group',
+            'children': [
+                {'name': 'Toggle Output',
+                 'type': 'bool',
+                 'value': False,
+                 'tip': "Toggle the output"},
+                {'name': 'Voltage RMS',
+                 'type': 'float',
+                 'value': default_voltage,
+                 'step': 0.1,
+                 'suffix': 'V'},
+                {'name': 'Frequency',
+                 'type': 'float',
+                 'value': default_frequency,
+                 'step': 1,
+                 'suffix': 'Hz'},
+                {'name': 'Arrangement',
+                 'type': 'list',
+                 'values': ["0 - 1 - 2",
+                            "0 - 2 - 1"], }
+            ]}]
+
+        self.param = Parameter.create(name='control params', type='group', children=self.control_params)
+        # self.param.addChild(parameterTypes.ListParameter())
+        self.setParameters(self.param, showTop=False)
+        self.param.sigTreeStateChanged.connect(self.send_change)  # When the params change, send to method to emit.
+
+    def send_change(self, param, changes):
+        self.paramChange.emit(param, changes)
+
+    # Convienience methods for modifying parameter values.
+    def get_param_value(self, branch, child):
+        """Get the current value of a parameter."""
+        return self.param.param(branch, child).value()
+
+    def set_param_value(self, branch, child, value):
+        """Set the current value of a parameter."""
+        return self.param.param(branch, child).setValue(value)
+
+    def print(self):
+        print("Controls")
+        pprint.pprint(self.control_params)
 
 
 if __name__ == '__main__':

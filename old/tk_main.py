@@ -1,7 +1,7 @@
 import sys
 import view
 import model
-from constants import *
+from old.constants import *
 import tkinter as tk
 from functools import partial
 from writer import SignalWriter

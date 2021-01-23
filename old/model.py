@@ -5,7 +5,7 @@ import numpy as np
 from nidaqmx.constants import AcquisitionType
 from nidaqmx.system import System
 
-from constants import *
+from old.constants import *
 
 
 # MODEL: handles backend of the program

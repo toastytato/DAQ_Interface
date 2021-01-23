@@ -2,10 +2,9 @@ import nidaqmx
 import numpy as np
 from nidaqmx.constants import AcquisitionType
 from nidaqmx.stream_readers import AnalogMultiChannelReader
-from nidaqmx.system import System
 from pyqtgraph.Qt import QtCore
 
-from constants import *
+from config import *
 
 
 class SignalReader(QtCore.QThread):
