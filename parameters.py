@@ -75,8 +75,8 @@ class ConfigParamTree(ParameterTree):
 
     def __init__(self):
         super().__init__()
-        default_sample_rate = 2000
-        default_sample_size = 500
+        default_sample_rate = 1000
+        default_sample_size = 1000
 
         self.setting_params = [{
             'name': 'Writer Config',
