@@ -122,7 +122,7 @@ class SignalWriter(QtCore.QObject):
     #     self.exec_()
 
     def write_signal_to_buffer(self):
-        print("Writing wave to task")
+        print("Writing wave to task at {} V, {} Hz".format(self.voltages, self.frequencies))
         for i in range(NUM_CHANNELS):
             if self.output_state[i]:
                 self.output_waveform[i] = self.wave_gen[i].generate_wave(self.voltages[i],
