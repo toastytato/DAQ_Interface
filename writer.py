@@ -140,6 +140,11 @@ class SignalWriter(QtCore.QObject):
             print(e)
             return
 
+    # makes sure all waveforms start at the same place so phase shifts work as intended for multi-channel processes
+    def realign_channels(self):
+        for i in range(len(self.output)):
+            self.wave_gen[i].reset_counter()
+
     def resume(self):
         print("Signal writer resumed")
         self.is_running = True
