@@ -12,6 +12,7 @@ Use PyQt5 version 5.9.2 to work on Windows Vista <br/>
 pip install nidaqmx
 pip install matplotlib==3.2.2
 pip install pyqt5==5.9.2
+pip install pyqtgraph
 ```
 
 ## Usage

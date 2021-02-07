@@ -1,6 +1,7 @@
+import pprint
+
 from pyqtgraph.Qt import QtCore
 from pyqtgraph.parametertree import *
-import pprint
 
 from config import *
 
@@ -36,6 +37,7 @@ class ChannelParamTree(ParameterTree):
                      'suffix': 'Hz'},
                     {'name': 'Phase Shift',
                      'type': 'float',
+                     'value': 0,
                      'step': 10,
                      'suffix': u'\N{DEGREE SIGN}'}
                 ]
@@ -82,22 +84,48 @@ class ConfigParamTree(ParameterTree):
             'name': 'Writer Config',
             'type': 'group',
             'children': [
+                {'name': 'Device Name',
+                 'type': 'str',
+                 'value': 'Dev1'},
+                {'name': 'X Output',
+                 'type': 'int',
+                 'value': 0},
+                {'name': 'Y Output',
+                 'type': 'int',
+                 'value': 1},
+                {'name': 'Z Output',
+                 'type': 'int',
+                 'value': 2},
                 {'name': 'Sample Rate',
                  'type': 'int',
                  'value': default_sample_rate},
                 {'name': 'Sample Size',
                  'type': 'int',
-                 'value': default_sample_size}, ]},
+                 'value': default_sample_size},
+            ]},
             {
                 'name': 'Reader Config',
                 'type': 'group',
                 'children': [
+                    {'name': 'Device Name',
+                     'type': 'str',
+                     'value': 'Dev2'},
+                    {'name': 'X Input',
+                     'type': 'int',
+                     'value': 0},
+                    {'name': 'Y Input',
+                     'type': 'int',
+                     'value': 1},
+                    {'name': 'Z Input',
+                     'type': 'int',
+                     'value': 2},
                     {'name': 'Sample Rate',
                      'type': 'int',
                      'value': 1000},
                     {'name': 'Sample Size',
                      'type': 'int',
-                     'value': 1000}, ]
+                     'value': 1000},
+                ]
             }]
 
         self.param = Parameter.create(name='setting params', type='group', children=self.setting_params)
@@ -115,6 +143,18 @@ class ConfigParamTree(ParameterTree):
     def set_param_value(self, branch, child, value):
         """Set the current value of a parameter."""
         return self.param.param(branch, child).setValue(value)
+
+    def get_read_channels(self):
+        channels = [self.get_param_value('Reader Config', 'X Input'),
+                    self.get_param_value('Reader Config', 'Y Input'),
+                    self.get_param_value('Reader Config', 'Z Input')]
+        return channels
+
+    def get_write_channels(self):
+        channels = [self.get_param_value('Writer Config', 'X Output'),
+                    self.get_param_value('Writer Config', 'Y Output'),
+                    self.get_param_value('Writer Config', 'Z Output')]
+        return channels
 
     def print(self):
         print("Settings")

@@ -52,7 +52,7 @@ class RotationalFieldGenerator(QtCore.QObject):
 
 class SignalWriter(QtCore.QObject):
 
-    def __init__(self, voltages, frequencies, shifts, sample_rate, sample_size, dev_name='Dev1'):
+    def __init__(self, voltages, frequencies, shifts, sample_rate, sample_size, channels, dev_name='Dev1'):
         super().__init__()
         self.writer = None
         self.task_counter = 0
@@ -122,7 +122,7 @@ class SignalWriter(QtCore.QObject):
     #     self.exec_()
 
     def write_signal_to_buffer(self):
-        print("Writing wave to task {} at {} V, {} Hz".format(self.output_state, self.voltages, self.frequencies))
+        # print("Writing wave to task {} at {} V, {} Hz".format(self.output_state, self.voltages, self.frequencies))
         for i in range(NUM_CHANNELS):
             if self.output_state[i]:
                 self.output_waveform[i] = self.wave_gen[i].generate_wave(self.voltages[i],

@@ -10,11 +10,12 @@ from config import *
 class SignalReader(QtCore.QThread):
     incoming_data = QtCore.pyqtSignal(object)
 
-    def __init__(self, sample_rate, sample_size, dev_name='Dev2'):
+    def __init__(self, sample_rate, sample_size, channels, dev_name='Dev2'):
         super().__init__()
 
         self.reader = None
         self.is_running = False
+        self.input_channels = channels
         self.daq_in_name = dev_name
 
         self.sample_rate = sample_rate
@@ -23,7 +24,7 @@ class SignalReader(QtCore.QThread):
 
     def run(self):
         self.is_running = True
-
+        print(self.input_channels)
         try:
             task = nidaqmx.Task("Reader Task")
         except OSError:
@@ -31,8 +32,8 @@ class SignalReader(QtCore.QThread):
             return
 
         try:
-            for i in range(NUM_CHANNELS):
-                channel_name = self.daq_in_name + "/ai" + str(i)
+            for i in range(len(self.input_channels)):
+                channel_name = self.daq_in_name + "/ai" + str(self.input_channels[i])
                 task.ai_channels.add_ai_voltage_chan(channel_name)
         except Exception as e:
             print("DAQ is not connected, task could not be created")

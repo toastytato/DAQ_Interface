@@ -1,15 +1,20 @@
 import sys
 
 import pyqtgraph as pg
-from PyQt5 import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from parameters import *
 # --- From DAQ Control --- #
 from reader import *
 from writer import *
-from parameters import *
 
+
+# TODO:
+#   Save Parameters after close
+#   Channel selection for reader (maybe writer)
+#   Graph legend for channels
+#
 
 class MainWindow(QMainWindow):
 
@@ -39,7 +44,7 @@ class MainWindow(QMainWindow):
         title = QLabel("DAQ Controller", self)
         title.setAlignment(QtCore.Qt.AlignHCenter)
         self.plotter = SignalPlot()
-        # self.plotter.setMaximumSize(800, 600)
+        # self.plotter.setMaximumSize(800, 360)
 
         self.b1 = QPushButton('Press to start signal out')
 
@@ -79,18 +84,24 @@ class MainWindow(QMainWindow):
             # initiate read threads for analog input
             self.read_thread = SignalReader(
                 sample_rate=self.setting_param_tree.get_param_value('Reader Config', 'Sample Rate'),
-                sample_size=self.setting_param_tree.get_param_value('Reader Config', 'Sample Size'))
+                sample_size=self.setting_param_tree.get_param_value('Reader Config', 'Sample Size'),
+                channels=self.setting_param_tree.get_read_channels(),
+                dev_name=self.setting_param_tree.get_param_value('Reader Config', 'Device Name'))
             self.read_thread.incoming_data.connect(self.plotter.update_plot)
             self.read_thread.start()
 
             # initiate writer for analog output
             # not handled on separate thread b/c not blocking
+
             self.writer = SignalWriter(
                 voltages=voltages,
                 frequencies=frequencies,
                 shifts=shifts,
                 sample_rate=self.setting_param_tree.get_param_value('Writer Config', 'Sample Rate'),
-                sample_size=self.setting_param_tree.get_param_value('Writer Config', 'Sample Size'), )
+                sample_size=self.setting_param_tree.get_param_value('Writer Config', 'Sample Size'),
+                channels=self.setting_param_tree.get_write_channels(),
+                dev_name=self.setting_param_tree.get_param_value('Writer Config', 'Device Name')
+            )
             self.writer.create_task()
 
         # Debugging without NI instrument
@@ -136,8 +147,12 @@ class MainWindow(QMainWindow):
                 self.writer.shifts[i] = parent.child("Phase Shift").value()
         elif i == 2:
             pass
-
-        print(self.channel_param_tree.param.child("Channel 0").child("Toggle Output").value())
+        if i != 2:
+            print("tab not 2")
+            if not DEBUG_MODE:
+                self.read_thread.input_channels = self.setting_param_tree.get_read_channels()
+                self.read_thread.is_running = False
+                self.read_thread.start()
 
     def channels_param_change(self, parameter, changes):
         # parameter: the GroupParameter object that holds the Channel Params
