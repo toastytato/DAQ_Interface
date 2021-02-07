@@ -24,7 +24,8 @@ class MainWindow(QMainWindow):
         self.init_daq_io()
 
         # Connect the output signal from changes in the param tree to change
-        self.b1.clicked.connect(self.button_on_click)
+        self.start_signal_btn.clicked.connect(self.start_signal_btn_click)
+        self.save_settings_btn.clicked.connect(self.save_settings_btn_click)
         self.tabs.currentChanged.connect(self.on_tab_change)
         self.controls_param_tree.paramChange.connect(self.controls_param_change)
         self.channel_param_tree.paramChange.connect(self.channels_param_change)
@@ -46,25 +47,31 @@ class MainWindow(QMainWindow):
         self.plotter = SignalPlot()
         # self.plotter.setMaximumSize(800, 360)
 
-        self.b1 = QPushButton('Press to start signal out')
+        self.start_signal_btn = QPushButton('Press to start signal out')
 
         self.controls_param_tree = ControlsParamTree()
 
         self.channel_param_tree = ChannelParamTree()  # From ParameterTree.py
         # self.channel_param_tree.setMinimumSize(100, 200)
 
+        self.settings_tab = QWidget()
+        self.settings_tab.layout = QVBoxLayout(self)
         self.setting_param_tree = ConfigParamTree()
+        self.save_settings_btn = QPushButton("Commit Settings")
+        self.settings_tab.layout.addWidget(self.setting_param_tree)
+        self.settings_tab.layout.addWidget(self.save_settings_btn)
+        self.settings_tab.setLayout(self.settings_tab.layout)
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self.controls_param_tree, "Main Controls")
         self.tabs.addTab(self.channel_param_tree, "Channels Controls")
-        self.tabs.addTab(self.setting_param_tree, "DAQ Settings")
-        self.tabs.setCurrentIndex(1)
+        self.tabs.addTab(self.settings_tab, "DAQ Settings")
+        self.tabs.setCurrentIndex(2)
 
         # place widgets in their respective locations
         layout.addWidget(title)  # row, col, rowspan, colspan
         layout.addWidget(self.plotter)
-        layout.addWidget(self.b1)
+        layout.addWidget(self.start_signal_btn)
         # layout.addWidget(self.setting_param_tree, 3, 1, 1, 1)
         layout.addWidget(self.tabs)
 
@@ -119,29 +126,32 @@ class MainWindow(QMainWindow):
         self.field_generator = RotationalFieldGenerator(self.writer)
 
     @pyqtSlot()
-    def button_on_click(self):
+    def start_signal_btn_click(self):
         if self.writer.is_running:
             print("Stopped DAQ signal")
             self.writer.pause()
-            self.b1.setText("Press to resume signal")
+            self.start_signal_btn.setText("Press to resume signal")
         else:
             print("Started DAQ signal")
             self.writer.resume()
-            self.b1.setText("Press to pause signal")
+            self.start_signal_btn.setText("Press to pause signal")
+
+    @pyqtSlot()
+    def save_settings_btn_click(self):
+        if not DEBUG_MODE:
+            self.read_thread.is_running = False
+
+            self.read_thread.input_channels = self.setting_param_tree.get_read_channels()
+            self.read_thread.sample_rate = self.setting_param_tree.get_param_value('Reader Config', 'Sample Rate')
+            self.read_thread.sample_size = self.setting_param_tree.get_param_value('Reader Config', 'Sample Size')
+
+            self.read_thread.start()
+        else:
+            print("Restarted signal reader")
 
     @pyqtSlot(int)
     def on_tab_change(self, i):
         print("changed to tab: ", i)
-
-        if i != 2:
-            if not DEBUG_MODE:
-                self.read_thread.is_running = False
-
-                self.read_thread.input_channels = self.setting_param_tree.get_read_channels()
-                self.read_thread.sample_rate = self.setting_param_tree.get_param_value('Reader Config', 'Sample Rate')
-                self.read_thread.sample_size = self.setting_param_tree.get_param_value('Reader Config', 'Sample Size')
-
-                self.read_thread.start()
 
         if i == 0:
             self.writer.realign_channels()
