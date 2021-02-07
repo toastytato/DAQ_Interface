@@ -133,6 +133,16 @@ class MainWindow(QMainWindow):
     def on_tab_change(self, i):
         print("changed to tab: ", i)
 
+        if i != 2:
+            if not DEBUG_MODE:
+                self.read_thread.is_running = False
+
+                self.read_thread.input_channels = self.setting_param_tree.get_read_channels()
+                self.read_thread.sample_rate = self.setting_param_tree.get_param_value('Reader Config', 'Sample Rate')
+                self.read_thread.sample_size = self.setting_param_tree.get_param_value('Reader Config', 'Sample Size')
+
+                self.read_thread.start()
+
         if i == 0:
             self.writer.realign_channels()
             self.field_generator.resume_signal()
@@ -147,12 +157,6 @@ class MainWindow(QMainWindow):
                 self.writer.shifts[i] = parent.child("Phase Shift").value()
         elif i == 2:
             pass
-        if i != 2:
-            print("tab not 2")
-            if not DEBUG_MODE:
-                self.read_thread.input_channels = self.setting_param_tree.get_read_channels()
-                self.read_thread.is_running = False
-                self.read_thread.start()
 
     def channels_param_change(self, parameter, changes):
         # parameter: the GroupParameter object that holds the Channel Params

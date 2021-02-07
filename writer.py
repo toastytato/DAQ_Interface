@@ -142,7 +142,7 @@ class SignalWriter(QtCore.QObject):
 
     # makes sure all waveforms start at the same place so phase shifts work as intended for multi-channel processes
     def realign_channels(self):
-        for i in range(len(self.output)):
+        for i in range(self.num_channels):
             self.wave_gen[i].reset_counter()
 
     def resume(self):

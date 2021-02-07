@@ -19,8 +19,8 @@ class SignalReader(QtCore.QThread):
         self.daq_in_name = dev_name
 
         self.sample_rate = sample_rate
-        self.read_chunk_size = sample_size
-        self.input = np.empty(shape=(NUM_CHANNELS, self.read_chunk_size))
+        self.sample_size = sample_size
+        self.input = np.empty(shape=(NUM_CHANNELS, self.sample_size))
 
     def run(self):
         self.is_running = True
@@ -48,7 +48,7 @@ class SignalReader(QtCore.QThread):
         while self.is_running:
             try:
                 reader.read_many_sample(data=self.input,
-                                        number_of_samples_per_channel=self.read_chunk_size)
+                                        number_of_samples_per_channel=self.sample_size)
                 self.incoming_data.emit(self.input)
 
             except Exception as e:
