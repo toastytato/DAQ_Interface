@@ -12,7 +12,7 @@ from writer import *
 
 # TODO:
 #   Save Parameters after close
-#   Channel selection for reader (maybe writer)
+#   Channel selection for writer
 #   Graph legend for channels
 #
 
@@ -138,13 +138,24 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def save_settings_btn_click(self):
+        print("Commit settings btn pressed")
         if not DEBUG_MODE:
-            self.read_thread.is_running = False
+            # TODO:
+            #   Create error dialog when same channels are inputted
+            #   Create error dialog when device name is wrong
+            #   Update writer settings
+            #   Fix sample size issue
 
+            # close the current task and wait until it has fully ended
+            self.read_thread.is_running = False
+            self.read_thread.wait()
+
+            # change the task parameters
             self.read_thread.input_channels = self.setting_param_tree.get_read_channels()
             self.read_thread.sample_rate = self.setting_param_tree.get_param_value('Reader Config', 'Sample Rate')
             self.read_thread.sample_size = self.setting_param_tree.get_param_value('Reader Config', 'Sample Size')
 
+            # start the task again
             self.read_thread.start()
         else:
             print("Restarted signal reader")
