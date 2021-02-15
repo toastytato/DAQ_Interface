@@ -5,6 +5,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 from parameters import *
+
 # --- From DAQ Control --- #
 from reader import *
 from writer import *
@@ -16,8 +17,8 @@ from writer import *
 #   Graph legend for channels
 #
 
-class MainWindow(QMainWindow):
 
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
@@ -47,7 +48,7 @@ class MainWindow(QMainWindow):
         self.plotter = SignalPlot()
         # self.plotter.setMaximumSize(800, 360)
 
-        self.start_signal_btn = QPushButton('Press to start signal out')
+        self.start_signal_btn = QPushButton("Press to start signal out")
 
         self.controls_param_tree = ControlsParamTree()
 
@@ -66,7 +67,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.controls_param_tree, "Main Controls")
         self.tabs.addTab(self.channel_param_tree, "Channels Controls")
         self.tabs.addTab(self.settings_tab, "DAQ Settings")
-        self.tabs.setCurrentIndex(2)
+        self.tabs.setCurrentIndex(1)
 
         # place widgets in their respective locations
         layout.addWidget(title)  # row, col, rowspan, colspan
@@ -81,19 +82,32 @@ class MainWindow(QMainWindow):
         frequencies = []
         shifts = []
         for i in range(NUM_CHANNELS):
-            branch = 'Channel ' + str(i)
-            voltages.append(self.channel_param_tree.get_param_value(branch, 'Voltage RMS'))
-            frequencies.append(self.channel_param_tree.get_param_value(branch, 'Frequency'))
-            shifts.append(self.channel_param_tree.get_param_value(branch, 'Phase Shift'))
+            branch = "Channel " + str(i)
+            voltages.append(
+                self.channel_param_tree.get_param_value(branch, "Voltage RMS")
+            )
+            frequencies.append(
+                self.channel_param_tree.get_param_value(branch, "Frequency")
+            )
+            shifts.append(
+                self.channel_param_tree.get_param_value(branch, "Phase Shift")
+            )
 
         # When NI instrument is attached
         if not DEBUG_MODE:
             # initiate read threads for analog input
             self.read_thread = SignalReader(
-                sample_rate=self.setting_param_tree.get_param_value('Reader Config', 'Sample Rate'),
-                sample_size=self.setting_param_tree.get_param_value('Reader Config', 'Sample Size'),
+                sample_rate=self.setting_param_tree.get_param_value(
+                    "Reader Config", "Sample Rate"
+                ),
+                sample_size=self.setting_param_tree.get_param_value(
+                    "Reader Config", "Sample Size"
+                ),
                 channels=self.setting_param_tree.get_read_channels(),
-                dev_name=self.setting_param_tree.get_param_value('Reader Config', 'Device Name'))
+                dev_name=self.setting_param_tree.get_param_value(
+                    "Reader Config", "Device Name"
+                ),
+            )
             self.read_thread.incoming_data.connect(self.plotter.update_plot)
             self.read_thread.start()
 
@@ -104,10 +118,16 @@ class MainWindow(QMainWindow):
                 voltages=voltages,
                 frequencies=frequencies,
                 shifts=shifts,
-                sample_rate=self.setting_param_tree.get_param_value('Writer Config', 'Sample Rate'),
-                sample_size=self.setting_param_tree.get_param_value('Writer Config', 'Sample Size'),
+                sample_rate=self.setting_param_tree.get_param_value(
+                    "Writer Config", "Sample Rate"
+                ),
+                sample_size=self.setting_param_tree.get_param_value(
+                    "Writer Config", "Sample Size"
+                ),
                 channels=self.setting_param_tree.get_write_channels(),
-                dev_name=self.setting_param_tree.get_param_value('Writer Config', 'Device Name')
+                dev_name=self.setting_param_tree.get_param_value(
+                    "Writer Config", "Device Name"
+                ),
             )
             self.writer.create_task()
 
@@ -118,8 +138,13 @@ class MainWindow(QMainWindow):
                 voltages=voltages,
                 frequencies=frequencies,
                 shifts=shifts,
-                sample_rate=self.setting_param_tree.get_param_value('Writer Config', 'Sample Rate'),
-                sample_size=self.setting_param_tree.get_param_value('Writer Config', 'Sample Size'))
+                sample_rate=self.setting_param_tree.get_param_value(
+                    "Writer Config", "Sample Rate"
+                ),
+                sample_size=self.setting_param_tree.get_param_value(
+                    "Writer Config", "Sample Size"
+                ),
+            )
             self.writer.newData.connect(self.plotter.update_plot)
 
         # pass by reference writer so field generator can manipulate it when it needs to
@@ -151,9 +176,17 @@ class MainWindow(QMainWindow):
             self.read_thread.wait()
 
             # change the task parameters
-            self.read_thread.input_channels = self.setting_param_tree.get_read_channels()
-            self.read_thread.sample_rate = self.setting_param_tree.get_param_value('Reader Config', 'Sample Rate')
-            self.read_thread.sample_size = self.setting_param_tree.get_param_value('Reader Config', 'Sample Size')
+            self.read_thread.input_channels = (
+                self.setting_param_tree.get_read_channels()
+            )
+            self.read_thread.sample_rate = self.setting_param_tree.get_param_value(
+                "Reader Config", "Sample Rate"
+            )
+            self.read_thread.sample_size = self.setting_param_tree.get_param_value(
+                "Reader Config", "Sample Size"
+            )
+
+            self.channel_param_tree.save_settings()
 
             # start the task again
             self.read_thread.start()
@@ -187,13 +220,13 @@ class MainWindow(QMainWindow):
             path = self.channel_param_tree.param.childPath(param)
             ch = int(path[0].split()[1])  # eg. splits 'Channel 0' into integer 0
 
-            if path[1] == 'Toggle Output':
+            if path[1] == "Toggle Output":
                 self.writer.output_state[ch] = data
-            if path[1] == 'Voltage RMS':
+            if path[1] == "Voltage RMS":
                 self.writer.voltages[ch] = data
-            if path[1] == 'Frequency':
+            if path[1] == "Frequency":
                 self.writer.frequencies[ch] = data
-            if path[1] == 'Phase Shift':
+            if path[1] == "Phase Shift":
                 self.writer.shifts[ch] = data
 
     def controls_param_change(self, parameter, changes):
@@ -201,18 +234,18 @@ class MainWindow(QMainWindow):
 
             path = self.controls_param_tree.param.childPath(param)
 
-            if path[1] == 'Toggle Output':
+            if path[1] == "Toggle Output":
                 if data:
                     self.field_generator.resume_signal()
                 else:
                     self.field_generator.pause_signal()
-            if path[1] == 'Voltage RMS':
+            if path[1] == "Voltage RMS":
                 self.field_generator.voltage = data
                 print(self.writer.voltages)
-            if path[1] == 'Frequency':
+            if path[1] == "Frequency":
                 self.field_generator.frequency = data
                 print(self.writer.frequencies)
-            if path[1] == 'Arrangement':
+            if path[1] == "Arrangement":
                 print(data)
 
     def settings_param_change(self, parameter, changes):
@@ -229,13 +262,16 @@ class MainWindow(QMainWindow):
         else:
             self.writer.end()
 
+        self.channel_param_tree.save_settings()
+        self.setting_param_tree.save_settings()
+
 
 class SignalPlot(pg.PlotWidget):
     def __init__(self):
         super().__init__()
         # PlotWidget super functions
         self.line_width = 1
-        self.curve_colors = ['b', 'g', 'r', 'c', 'y', 'm']
+        self.curve_colors = ["b", "g", "r", "c", "y", "m"]
         self.pens = [pg.mkPen(i, width=self.line_width) for i in self.curve_colors]
         self.showGrid(y=True)
         # self.disableAutoRange('y')

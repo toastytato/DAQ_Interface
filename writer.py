@@ -51,8 +51,16 @@ class RotationalFieldGenerator(QtCore.QObject):
 
 
 class SignalWriter(QtCore.QObject):
-
-    def __init__(self, voltages, frequencies, shifts, sample_rate, sample_size, channels, dev_name='Dev1'):
+    def __init__(
+        self,
+        voltages,
+        frequencies,
+        shifts,
+        sample_rate,
+        sample_size,
+        channels,
+        dev_name="Dev1",
+    ):
         super().__init__()
         self.writer = None
         self.task_counter = 0
@@ -72,7 +80,9 @@ class SignalWriter(QtCore.QObject):
         self.channels = channels
         self.output_state = [False] * self.num_channels
         self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
-        self.output_waveform = np.empty(shape=(self.num_channels, self.write_chunk_size))
+        self.output_waveform = np.empty(
+            shape=(self.num_channels, self.write_chunk_size)
+        )
 
         self.voltages = voltages
         self.frequencies = frequencies
@@ -93,9 +103,11 @@ class SignalWriter(QtCore.QObject):
 
         signals_in_buffer = 4
         buffer_length = self.write_chunk_size * signals_in_buffer
-        self.task.timing.cfg_samp_clk_timing(rate=self.signal_rate,
-                                             samps_per_chan=buffer_length,
-                                             sample_mode=AcquisitionType.CONTINUOUS)
+        self.task.timing.cfg_samp_clk_timing(
+            rate=self.signal_rate,
+            samps_per_chan=buffer_length,
+            sample_mode=AcquisitionType.CONTINUOUS,
+        )
 
         self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
         # apparently the samps_per_chan doesn't do much for buffer size
@@ -113,7 +125,13 @@ class SignalWriter(QtCore.QObject):
 
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-        self.signal_time = 1000 / self.chunks_per_second
+
+        try:
+            self.signal_time = 1000 * (self.sample_size / self.sample_rate)
+        except ZeroDivisionError as e:
+            print("Sample Rate should not be zero, setting to 1")
+            self.signal_time = 1000 * (self.sample_size)
+
         self.timer.timeout.connect(self.write_signal_to_buffer)
 
     #     # start thread (calls self.run)
@@ -126,11 +144,13 @@ class SignalWriter(QtCore.QObject):
         # print("Writing wave to task {} at {} V, {} Hz".format(self.output_state, self.voltages, self.frequencies))
         for i in range(NUM_CHANNELS):
             if self.output_state[i]:
-                self.output_waveform[i] = self.wave_gen[i].generate_wave(self.voltages[i],
-                                                                         self.frequencies[i],
-                                                                         self.shifts[i],
-                                                                         self.signal_rate,
-                                                                         self.write_chunk_size)
+                self.output_waveform[i] = self.wave_gen[i].generate_wave(
+                    self.voltages[i],
+                    self.frequencies[i],
+                    self.shifts[i],
+                    self.signal_rate,
+                    self.write_chunk_size,
+                )
             else:
                 self.output_waveform[i] = np.zeros(self.write_chunk_size)
 
@@ -201,7 +221,12 @@ class DebugSignalGenerator(QtCore.QObject):
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
 
-        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
+        try:
+            self.signal_time = 1000 * (self.sample_size / self.sample_rate)
+        except ZeroDivisionError as e:
+            print("Sample Rate should not be zero, setting to 1")
+            self.signal_time = 1000 * (self.sample_size)
+
         self.timer.timeout.connect(self.callback)
 
     def resume(self):
@@ -212,7 +237,7 @@ class DebugSignalGenerator(QtCore.QObject):
 
     def pause(self):
         print("Signal paused")
-        print('Slot doing stuff in:', QtCore.QThread.currentThread())
+        print("Slot doing stuff in:", QtCore.QThread.currentThread())
         self.is_running = False
         self.timer.stop()
 
@@ -224,11 +249,13 @@ class DebugSignalGenerator(QtCore.QObject):
     def callback(self):
         for i in range(len(self.output)):
             if self.output_state[i]:
-                self.output[i] = self.wave_gen[i].generate_wave(self.voltages[i],
-                                                                self.frequencies[i],
-                                                                self.shifts[i],
-                                                                self.sample_rate,
-                                                                self.sample_size)
+                self.output[i] = self.wave_gen[i].generate_wave(
+                    self.voltages[i],
+                    self.frequencies[i],
+                    self.shifts[i],
+                    self.sample_rate,
+                    self.sample_size,
+                )
             else:
                 self.output[i] = np.zeros(self.sample_size)
 
@@ -255,10 +282,12 @@ class WaveGenerator:
 
         phase_shift = 2 * np.pi * shift / 360
 
-        self.output_times = np.linspace(start=0,
-                                        stop=num / frequency,
-                                        num=samples_per_period * num)
-        output_waveform = amplitude * np.sin(self.output_times * rad_per_sec - phase_shift)
+        self.output_times = np.linspace(
+            start=0, stop=num / frequency, num=samples_per_period * num
+        )
+        output_waveform = amplitude * np.sin(
+            self.output_times * rad_per_sec - phase_shift
+        )
         return output_waveform
 
     def reset_counter(self):
@@ -302,23 +331,29 @@ class WaveGenerator:
         start_fraction = waves_per_chunk % 1
         freq_shifter = self.counter * 2 * np.pi * start_fraction
 
-        self.output_times = np.linspace(start=0, stop=sec_per_chunk, num=samples_per_chunk)
-        output_waveform = amplitude * np.sin(self.output_times * rad_per_sec + freq_shifter - phase_shift)
+        self.output_times = np.linspace(
+            start=0, stop=sec_per_chunk, num=samples_per_chunk
+        )
+        output_waveform = amplitude * np.sin(
+            self.output_times * rad_per_sec + freq_shifter - phase_shift
+        )
 
         return output_waveform
 
 
-if __name__ == '__main__':
-    print('\nRunning demo for SignalWriter\n')
+if __name__ == "__main__":
+    print("\nRunning demo for SignalWriter\n")
 
     voltage = input("Input Voltage: ")
     frequency = input("Input Frequency: ")
 
-    writer = SignalWriter(voltages=voltage,
-                          frequencies=frequency,
-                          shifts=0,
-                          sample_rate=1000,
-                          sample_size=500)
+    writer = SignalWriter(
+        voltages=voltage,
+        frequencies=frequency,
+        shifts=0,
+        sample_rate=1000,
+        sample_size=500,
+    )
 
     writer.start()
 
