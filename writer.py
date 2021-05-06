@@ -43,8 +43,6 @@ class RotationalFieldGenerator(QtCore.QObject):
             self.writer.frequencies[ch] = self._frequency
             self.writer.shifts[ch] = (360 / self.num_channels) * ch
 
-        print(self.writer.shifts)
-
     def pause_signal(self):
         for ch in range(self.num_channels):
             self.writer.output_state[ch] = False
@@ -203,10 +201,12 @@ class DebugSignalGenerator(QtCore.QObject):
         if len(voltages) != len(frequencies):
             print("Error: voltage list size not the same as frequency list size")
 
-        num_channels = len(voltages)
+        num_channels = len(CHANNEL_NAMES)
 
         self.is_running = False
         self.output_state = [False] * num_channels
+        print(self.output_state)
+
         self.voltages = voltages
         self.frequencies = frequencies
         self.shifts = shifts

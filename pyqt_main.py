@@ -1,14 +1,13 @@
 import sys
 
-import pyqtgraph as pg
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-
-from parameters import *
 
 # --- From DAQ Control --- #
 from reader import *
 from writer import *
+from parameters import *
+from plotter import *
 
 
 # TODO:
@@ -70,7 +69,6 @@ class MainWindow(QMainWindow):
         # place widgets in their respective locations
         layout.addWidget(title)  # row, col, rowspan, colspan
         layout.addWidget(self.plotter)
-        layout.addLayout(self.legend)
         layout.addWidget(self.start_signal_btn)
         # layout.addWidget(self.setting_param_tree, 3, 1, 1, 1)
         layout.addWidget(self.tabs)
@@ -193,21 +191,22 @@ class MainWindow(QMainWindow):
             print("Restarted signal reader")
 
     @pyqtSlot(int)
-    def on_tab_change(self, i):
-        print("changed to tab: ", i)
+    def on_tab_change(self, t):
+        print("changed to tab: ", t)
 
-        if i == 0:
+        if t == 0:
             self.writer.realign_channels()
             self.field_generator.resume_signal()
-        elif i == 1:
+        elif t == 1:
             self.writer.realign_channels()
-            for ch in CHANNEL_NAMES:
+            self.field_generator.pause_signal()
+            for i, ch in enumerate(CHANNEL_NAMES):
                 parent = self.channel_param_tree.param.child("Output " + ch)
                 self.writer.output_state[i] = parent.child("Toggle Output").value()
                 self.writer.voltages[i] = parent.child("Voltage RMS").value()
                 self.writer.frequencies[i] = parent.child("Frequency").value()
                 self.writer.shifts[i] = parent.child("Phase Shift").value()
-        elif i == 2:
+        elif t == 2:
             pass
 
     def channels_param_change(self, parameter, changes):
@@ -217,7 +216,7 @@ class MainWindow(QMainWindow):
 
             path = self.channel_param_tree.param.childPath(param)
             ch = CHANNEL_NAMES.index(path[0].split()[1])
-
+            print(ch)
             if path[1] == "Toggle Output":
                 self.writer.output_state[ch] = data
             if path[1] == "Voltage RMS":
@@ -262,24 +261,6 @@ class MainWindow(QMainWindow):
 
         self.channel_param_tree.save_settings()
         self.setting_param_tree.save_settings()
-
-
-# Graph Widget
-class SignalPlot(pg.PlotWidget):
-    def __init__(self):
-        super().__init__()
-        # PlotWidget super functions
-        self.line_width = 1
-        self.curve_colors = ["b", "g", "r", "c", "y", "m"]
-        self.pens = [pg.mkPen(i, width=self.line_width) for i in self.curve_colors]
-        self.showGrid(y=True)
-        self.addLegend()
-        # self.disableAutoRange('y')
-
-    def update_plot(self, incoming_data):
-        self.clear()
-        for i in range(np.shape(incoming_data)[0]):
-            self.plot(incoming_data[i], clear=False, pen=self.pens[i])
 
 
 if __name__ == "__main__":
