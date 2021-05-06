@@ -6,7 +6,7 @@ from PyQt5.QtCore import QSettings
 
 from config import *
 
-
+# data container for parameters controlling output and input on each channel
 class ChannelParamTree(ParameterTree):
     # ParamTree will output a signal that has the param and the output
     paramChange = QtCore.pyqtSignal(object, object)
@@ -17,9 +17,9 @@ class ChannelParamTree(ParameterTree):
         self.settings = QSettings("DAQ_Control", "Channels Param")
 
         self.channel_params = []
-        for i in range(NUM_CHANNELS):
+        for ch in CHANNEL_NAMES:
             param = {
-                "name": "Channel " + str(i),
+                "name": "Output " + ch,
                 "type": "group",
                 "children": [
                     {
@@ -31,21 +31,21 @@ class ChannelParamTree(ParameterTree):
                     {
                         "name": "Voltage RMS",
                         "type": "float",
-                        "value": self.settings.value("Ch" + str(i) + "Voltage"),
+                        "value": self.settings.value(ch + "_Voltage"),
                         "step": 0.1,
                         "suffix": "V",
                     },
                     {
                         "name": "Frequency",
                         "type": "float",
-                        "value": self.settings.value("Ch" + str(i) + "Frequency"),
+                        "value": self.settings.value(ch + "_Frequency"),
                         "step": 1,
                         "suffix": "Hz",
                     },
                     {
                         "name": "Phase Shift",
                         "type": "float",
-                        "value": self.settings.value("Ch" + str(i) + "Phase"),
+                        "value": self.settings.value(ch + "_Phase"),
                         "step": 10,
                         "suffix": u"\N{DEGREE SIGN}",
                     },
@@ -80,20 +80,20 @@ class ChannelParamTree(ParameterTree):
         return param.setValue(newVal)
 
     def save_settings(self):
-        for i in range(NUM_CHANNELS):
-            print(self.get_param_value("Channel " + str(i), "Voltage RMS"))
+        for ch in CHANNEL_NAMES:
+            print(self.get_param_value("Output " + ch, "Voltage RMS"))
             self.settings.setValue(
-                "Ch" + str(i) + "Voltage",
-                self.get_param_value("Channel " + str(i), "Voltage RMS"),
+                ch + "_Voltage",
+                self.get_param_value("Output " + ch, "Voltage RMS"),
             )
 
             self.settings.setValue(
-                "Ch" + str(i) + "Frequency",
-                self.get_param_value("Channel " + str(i), "Frequency"),
+                ch + "_Frequency",
+                self.get_param_value("Output " + ch, "Frequency"),
             )
             self.settings.setValue(
-                "Ch" + str(i) + "Phase",
-                self.get_param_value("Channel " + str(i), "Phase Shift"),
+                ch + "_Phase",
+                self.get_param_value("Output " + ch, "Phase Shift"),
             )
 
     def print(self):
@@ -101,6 +101,7 @@ class ChannelParamTree(ParameterTree):
         pprint.pprint(self.channel_params)
 
 
+# data container for parameters controlling settings saved in configurations tab
 class ConfigParamTree(ParameterTree):
     paramChange = QtCore.pyqtSignal(object, object)
 
@@ -118,21 +119,6 @@ class ConfigParamTree(ParameterTree):
                         "name": "Device Name",
                         "type": "str",
                         "value": self.settings.value("Writer Device Name"),
-                    },
-                    {
-                        "name": "X Output",
-                        "type": "int",
-                        "value": self.settings.value("X Output Channel"),
-                    },
-                    {
-                        "name": "Y Output",
-                        "type": "int",
-                        "value": self.settings.value("Y Output Channel"),
-                    },
-                    {
-                        "name": "Z Output",
-                        "type": "int",
-                        "value": self.settings.value("Z Output Channel"),
                     },
                     {
                         "name": "Sample Rate",
@@ -156,21 +142,6 @@ class ConfigParamTree(ParameterTree):
                         "value": self.settings.value("Reader Device Name"),
                     },
                     {
-                        "name": "X Input",
-                        "type": "int",
-                        "value": self.settings.value("X Input Channel"),
-                    },
-                    {
-                        "name": "Y Input",
-                        "type": "int",
-                        "value": self.settings.value("Y Input Channel"),
-                    },
-                    {
-                        "name": "Z Input",
-                        "type": "int",
-                        "value": self.settings.value("Z Input Channel"),
-                    },
-                    {
                         "name": "Sample Rate",
                         "type": "int",
                         "value": self.settings.value("Reader Sample Rate"),
@@ -183,6 +154,23 @@ class ConfigParamTree(ParameterTree):
                 ],
             },
         ]
+
+        # add in the different channels
+        for ch in CHANNEL_NAMES:
+            self.setting_params[0]["children"].append(
+                {
+                    "name": ch + " Output Channel",
+                    "type": "int",
+                    "value": self.settings.value(ch + " Output Channel"),
+                }
+            )
+            self.setting_params[1]["children"].append(
+                {
+                    "name": ch + " Input Channel",
+                    "type": "int",
+                    "value": self.settings.value(ch + " Input Channel"),
+                }
+            )
 
         self.param = Parameter.create(
             name="setting params", type="group", children=self.setting_params
@@ -205,64 +193,53 @@ class ConfigParamTree(ParameterTree):
 
     def get_read_channels(self):
         channels = [
-            self.get_param_value("Reader Config", "X Input"),
-            self.get_param_value("Reader Config", "Y Input"),
-            self.get_param_value("Reader Config", "Z Input"),
+            self.get_param_value("Reader Config", ch + " Input Channel")
+            for ch in CHANNEL_NAMES
         ]
         return channels
 
     def get_write_channels(self):
         channels = [
-            self.get_param_value("Writer Config", "X Output"),
-            self.get_param_value("Writer Config", "Y Output"),
-            self.get_param_value("Writer Config", "Z Output"),
+            self.get_param_value("Writer Config", ch + " Output Channel")
+            for ch in CHANNEL_NAMES
         ]
         return channels
 
     def save_settings(self):
-        for i in range(NUM_CHANNELS):
-            self.settings.setValue(
-                "Writer Device Name",
-                self.get_param_value("Writer Config", "Device Name"),
-            )
-            self.settings.setValue(
-                "X Output Channel", self.get_param_value("Writer Config", "X Output")
-            )
-            self.settings.setValue(
-                "Y Output Channel", self.get_param_value("Writer Config", "Y Output")
-            )
-            self.settings.setValue(
-                "Z Output Channel", self.get_param_value("Writer Config", "Z Output")
-            )
-            self.settings.setValue(
-                "Writer Sample Rate",
-                self.get_param_value("Writer Config", "Sample Rate"),
-            )
-            self.settings.setValue(
-                "Writer Sample Size",
-                self.get_param_value("Writer Config", "Sample Size"),
-            )
+        self.settings.setValue(
+            "Writer Device Name",
+            self.get_param_value("Writer Config", "Device Name"),
+        )
+        self.settings.setValue(
+            "Writer Sample Rate",
+            self.get_param_value("Writer Config", "Sample Rate"),
+        )
+        self.settings.setValue(
+            "Writer Sample Size",
+            self.get_param_value("Writer Config", "Sample Size"),
+        )
 
+        self.settings.setValue(
+            "Reader Device Name",
+            self.get_param_value("Reader Config", "Device Name"),
+        )
+        self.settings.setValue(
+            "Reader Sample Rate",
+            self.get_param_value("Reader Config", "Sample Rate"),
+        )
+        self.settings.setValue(
+            "Reader Sample Size",
+            self.get_param_value("Reader Config", "Sample Size"),
+        )
+
+        for ch in CHANNEL_NAMES:
             self.settings.setValue(
-                "Reader Device Name",
-                self.get_param_value("Reader Config", "Device Name"),
+                ch + " Output Channel",
+                self.get_param_value("Writer Config", ch + " Output Channel"),
             )
             self.settings.setValue(
-                "X Input Channel", self.get_param_value("Reader Config", "X Input")
-            )
-            self.settings.setValue(
-                "Y Input Channel", self.get_param_value("Reader Config", "Y Input")
-            )
-            self.settings.setValue(
-                "Z Input Channel", self.get_param_value("Reader Config", "Z Input")
-            )
-            self.settings.setValue(
-                "Reader Sample Rate",
-                self.get_param_value("Reader Config", "Sample Rate"),
-            )
-            self.settings.setValue(
-                "Reader Sample Size",
-                self.get_param_value("Reader Config", "Sample Size"),
+                ch + " Input Channel",
+                self.get_param_value("Reader Config", ch + " Input Channel"),
             )
 
     def print(self):

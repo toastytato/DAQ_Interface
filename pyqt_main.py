@@ -12,8 +12,6 @@ from writer import *
 
 
 # TODO:
-#   Save Parameters after close
-#   Channel selection for writer
 #   Graph legend for channels
 #
 
@@ -40,7 +38,7 @@ class MainWindow(QMainWindow):
 
         self.mainbox = QWidget(self)
         self.setCentralWidget(self.mainbox)
-        layout = QGridLayout()
+        layout = QVBoxLayout()
         self.mainbox.setLayout(layout)
 
         title = QLabel("DAQ Controller", self)
@@ -72,6 +70,7 @@ class MainWindow(QMainWindow):
         # place widgets in their respective locations
         layout.addWidget(title)  # row, col, rowspan, colspan
         layout.addWidget(self.plotter)
+        layout.addLayout(self.legend)
         layout.addWidget(self.start_signal_btn)
         # layout.addWidget(self.setting_param_tree, 3, 1, 1, 1)
         layout.addWidget(self.tabs)
@@ -81,8 +80,8 @@ class MainWindow(QMainWindow):
         voltages = []
         frequencies = []
         shifts = []
-        for i in range(NUM_CHANNELS):
-            branch = "Channel " + str(i)
+        for ch in CHANNEL_NAMES:
+            branch = "Output " + ch
             voltages.append(
                 self.channel_param_tree.get_param_value(branch, "Voltage RMS")
             )
@@ -131,7 +130,7 @@ class MainWindow(QMainWindow):
             )
             self.writer.create_task()
 
-        # Debugging without NI instrument
+        # Debugging on computer without NI instrument
         else:
             # Use software signal generator and read from that
             self.writer = DebugSignalGenerator(
@@ -145,7 +144,7 @@ class MainWindow(QMainWindow):
                     "Writer Config", "Sample Size"
                 ),
             )
-            self.writer.newData.connect(self.plotter.update_plot)
+            self.writer.new_data.connect(self.plotter.update_plot)
 
         # pass by reference writer so field generator can manipulate it when it needs to
         self.field_generator = RotationalFieldGenerator(self.writer)
@@ -202,9 +201,8 @@ class MainWindow(QMainWindow):
             self.field_generator.resume_signal()
         elif i == 1:
             self.writer.realign_channels()
-            for i in range(NUM_CHANNELS):
-                channel = "Channel " + str(i)
-                parent = self.channel_param_tree.param.child(channel)
+            for ch in CHANNEL_NAMES:
+                parent = self.channel_param_tree.param.child("Output " + ch)
                 self.writer.output_state[i] = parent.child("Toggle Output").value()
                 self.writer.voltages[i] = parent.child("Voltage RMS").value()
                 self.writer.frequencies[i] = parent.child("Frequency").value()
@@ -218,7 +216,7 @@ class MainWindow(QMainWindow):
         for param, change, data in changes:
 
             path = self.channel_param_tree.param.childPath(param)
-            ch = int(path[0].split()[1])  # eg. splits 'Channel 0' into integer 0
+            ch = CHANNEL_NAMES.index(path[0].split()[1])
 
             if path[1] == "Toggle Output":
                 self.writer.output_state[ch] = data
@@ -266,6 +264,7 @@ class MainWindow(QMainWindow):
         self.setting_param_tree.save_settings()
 
 
+# Graph Widget
 class SignalPlot(pg.PlotWidget):
     def __init__(self):
         super().__init__()
@@ -274,6 +273,7 @@ class SignalPlot(pg.PlotWidget):
         self.curve_colors = ["b", "g", "r", "c", "y", "m"]
         self.pens = [pg.mkPen(i, width=self.line_width) for i in self.curve_colors]
         self.showGrid(y=True)
+        self.addLegend()
         # self.disableAutoRange('y')
 
     def update_plot(self, incoming_data):

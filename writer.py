@@ -14,7 +14,7 @@ class RotationalFieldGenerator(QtCore.QObject):
         self.writer = writer
         self._frequency = 0
         self._voltage = 0
-        self.num_channels = 3
+        self.num_channels = len(CHANNEL_NAMES)
 
     @property
     def frequency(self):
@@ -77,7 +77,7 @@ class SignalWriter(QtCore.QObject):
             print("ERROR: voltage list size not the same as frequency list size")
 
         self.num_channels = len(channels)
-        self.channels = channels
+        self.output_channels = channels
         self.output_state = [False] * self.num_channels
         self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
         self.output_waveform = np.empty(
@@ -88,8 +88,6 @@ class SignalWriter(QtCore.QObject):
         self.frequencies = frequencies
         self.shifts = shifts
 
-    # ---- DAQ Control method 3 based on meEEE ----
-
     def create_task(self):
         try:
             self.task = nidaqmx.Task()
@@ -97,8 +95,8 @@ class SignalWriter(QtCore.QObject):
             print("DAQ is not connected, task could not be created")
             return
 
-        for i in self.channels:
-            channel_name = self.daq_out_name + "/ao" + str(i)
+        for ch in self.output_channels:
+            channel_name = self.daq_out_name + "/ao" + str(ch)
             self.task.ao_channels.add_ao_voltage_chan(channel_name)
 
         signals_in_buffer = 4
@@ -142,7 +140,7 @@ class SignalWriter(QtCore.QObject):
 
     def write_signal_to_buffer(self):
         # print("Writing wave to task {} at {} V, {} Hz".format(self.output_state, self.voltages, self.frequencies))
-        for i in range(NUM_CHANNELS):
+        for i in range(self.num_channels):
             if self.output_state[i]:
                 self.output_waveform[i] = self.wave_gen[i].generate_wave(
                     self.voltages[i],
@@ -194,7 +192,7 @@ class DebugSignalGenerator(QtCore.QObject):
     without initializing NI method that can raise errors
     """
 
-    newData = QtCore.pyqtSignal(object)
+    new_data = QtCore.pyqtSignal(object)
 
     def __init__(self, voltages, frequencies, shifts, sample_rate, sample_size):
         super().__init__()
@@ -259,7 +257,7 @@ class DebugSignalGenerator(QtCore.QObject):
             else:
                 self.output[i] = np.zeros(self.sample_size)
 
-        self.newData.emit(self.output)
+        self.new_data.emit(self.output)
 
     def end(self):
         self.is_running = False
@@ -353,9 +351,10 @@ if __name__ == "__main__":
         shifts=0,
         sample_rate=1000,
         sample_size=500,
+        channels=[0],
     )
 
-    writer.start()
+    writer.resume()
 
     input("Press return to stop")
     writer.end()
