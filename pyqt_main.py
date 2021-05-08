@@ -199,7 +199,6 @@ class MainWindow(QMainWindow):
             self.field_generator.resume_signal()
         elif t == 1:
             self.writer.realign_channels()
-            self.field_generator.pause_signal()
             for i, ch in enumerate(CHANNEL_NAMES):
                 parent = self.channel_param_tree.param.child("Output " + ch)
                 self.writer.output_state[i] = parent.child("Toggle Output").value()
