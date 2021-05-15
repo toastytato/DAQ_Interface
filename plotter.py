@@ -1,25 +1,70 @@
+from PyQt5 import QtGui
+from config import CHANNEL_NAMES
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+
 import pyqtgraph as pg
 import numpy as np
 
 # Graph Widget
 class SignalPlot(pg.PlotWidget):
-    def __init__(self):
+    def __init__(self, legend=None):
         super().__init__()
         # PlotWidget super functions
         self.line_width = 1
-        self.curve_colors = ["b", "g", "r", "c", "y", "m"]
+
+        if legend is None:  # default colors if no legend has been created
+            self.curve_colors = ["b", "g", "r", "c", "y", "m"]
+        else:
+            self.curve_colors = legend.curve_colors
+
         self.pens = [pg.mkPen(i, width=self.line_width) for i in self.curve_colors]
         self.showGrid(y=True)
-        self.addLegend()
         # self.disableAutoRange('y')
 
     def update_plot(self, incoming_data):
         self.clear()
-        for i in range(np.shape(incoming_data)[0]):
-            self.plot(incoming_data[i], clear=False, pen=self.pens[i])
+        for i, data in enumerate(incoming_data):
+            self.plot(data, clear=False, pen=self.pens[i])
 
 
-class Legend:
-    def __init__(self):
+class LegendItem(QWidget):
+    def __init__(self, color, name, channel):
         super().__init__()
-        pass
+        self.color = color
+        text = name + " Input (Ch." + str(channel) + ")"
+        self.curve_label = QLabel(text)
+        self.curve_label.setAlignment(Qt.AlignCenter)
+        layout = QHBoxLayout()
+        layout.addWidget(self.curve_label)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.setLayout(layout)
+        self.update()  # calls paintEvent
+
+    def paintEvent(self, e):
+        painter = QtGui.QPainter(self)
+        painter.setPen(QtGui.QPen(pg.mkColor(self.color), 3, Qt.SolidLine))
+
+        width, height = painter.device().width(), painter.device().height()
+        line_length = 25
+        line_start = width / 2 - 70
+        painter.drawLine(line_start, height / 2, line_start + line_length, height / 2)
+
+
+# TODO:
+#   change channel when settings updated
+class Legend(QWidget):
+    def __init__(self, channels):
+        super().__init__()
+
+        layout = QHBoxLayout()
+        self.curve_colors = ["b", "g", "r", "c", "y", "m"]
+
+        for i, name in enumerate(CHANNEL_NAMES):
+            legend_item = LegendItem(
+                color=self.curve_colors[i], name=name, channel=channels[i]
+            )
+            layout.addWidget(legend_item)
+
+        self.setLayout(layout)

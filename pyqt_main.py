@@ -40,21 +40,23 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         self.mainbox.setLayout(layout)
 
+        # initialize parameters database
+        self.controls_param_tree = ControlsParamTree()
+        self.channel_param_tree = ChannelParamTree()
+        self.setting_param_tree = ConfigParamTree()
+
         title = QLabel("DAQ Controller", self)
-        title.setAlignment(QtCore.Qt.AlignHCenter)
-        self.plotter = SignalPlot()
+        title.setAlignment(Qt.AlignHCenter)
+        self.legend = Legend(self.setting_param_tree.get_read_channels())
+        self.plotter = SignalPlot(self.legend)
         # self.plotter.setMaximumSize(800, 360)
 
         self.start_signal_btn = QPushButton("Press to start signal out")
 
-        self.controls_param_tree = ControlsParamTree()
-
-        self.channel_param_tree = ChannelParamTree()  # From ParameterTree.py
         # self.channel_param_tree.setMinimumSize(100, 200)
 
         self.settings_tab = QWidget()
         self.settings_tab.layout = QVBoxLayout(self)
-        self.setting_param_tree = ConfigParamTree()
         self.save_settings_btn = QPushButton("Commit Settings")
         self.settings_tab.layout.addWidget(self.setting_param_tree)
         self.settings_tab.layout.addWidget(self.save_settings_btn)
@@ -69,6 +71,7 @@ class MainWindow(QMainWindow):
         # place widgets in their respective locations
         layout.addWidget(title)  # row, col, rowspan, colspan
         layout.addWidget(self.plotter)
+        layout.addWidget(self.legend)
         layout.addWidget(self.start_signal_btn)
         # layout.addWidget(self.setting_param_tree, 3, 1, 1, 1)
         layout.addWidget(self.tabs)

@@ -205,6 +205,7 @@ class ConfigParamTree(ParameterTree):
         ]
         return channels
 
+    # saves parameters into the Windows Registry
     def save_settings(self):
         self.settings.setValue(
             "Writer Device Name",
