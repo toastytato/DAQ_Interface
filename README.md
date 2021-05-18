@@ -2,7 +2,7 @@
 
 GUI for controlling NI DAQ devices and monitoring output/input voltages in multiple channels
 
-![Screenshot of software as of 5/17/2021](![alt text](https://github.com/toastytato/DAQ_Interface/examples/daq_channels.png?raw=true)
+![Screenshot of software as of 5/17/2021](![alt text](https://github.com/toastytato/DAQ_Interface/blob/master/examples/daq_channels.png?raw=true)
 )
 
 ## Installation
