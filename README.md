@@ -2,17 +2,17 @@
 
 GUI for controlling NI DAQ devices and monitoring output/input voltages in multiple channels
 
-![Screenshot of software as of 5/17/2021](![alt text](https://github.com/toastytato/DAQ_Interface/blob/master/examples/daq_channels.png?raw=true)
+(![Screenshot of software as of 5/17/2021](https://github.com/toastytato/DAQ_Interface/blob/master/examples/daq_channels.png?raw=true)
 )
 
 ## Installation
 
-~~For standalone application, just download main.exe in the 'dist' and run the file.~~
+~~For standalone application, just download main.exe in the 'dist' and run the file.~~ <br/>
 
-~~Recommended to use Python 3.7.8 (able to run on Windows Vista) <br/>
-Install NI DAQ API and Matplotlib version 3.2.2 (stability issues with newer version)<br/>~~
+~~Recommended to use Python 3.7.8 (able to run on Windows Vista)~~ <br/>
+~~Install NI DAQ API and Matplotlib version 3.2.2 (stability issues with newer version)~~ <br/>
 
-~~Use PyQt5 version 5.9.2 to work on Windows Vista <br/>~~
+~~Use PyQt5 version 5.9.2 to work on Windows Vista~~ <br/>
 
 For newer machines, install Python 3.8.9 and the following modules:
 
@@ -21,6 +21,8 @@ pip install nidaqmx
 pip install pyqt5
 pip install pyqtgraph
 ```
+
+Run pyqt_main.py and the interface should show up.
 
 ### Debug
 

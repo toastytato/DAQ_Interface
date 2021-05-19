@@ -1,5 +1,5 @@
 # Constants for main
-DEBUG_MODE = False
+DEBUG_MODE = True
 
-# Number of channels to sample/display
-NUM_CHANNELS = 3
+# Sets the number of concurrent output/input channels as well as their names
+CHANNEL_NAMES = ["X", "Y", "Z"]
