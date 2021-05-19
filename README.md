@@ -27,7 +27,7 @@ Run pyqt_main.py and the interface should show up.
 ### Debug
 
 There are two states for the interface, debug or not. Use debug when the National Instruments DAQ device is not connected to the PC, and all signal generated will be simulated. This is to prevent the nidaqmx library from
-throwing errors. To change this, go into the config.py file and change the variable DEBUG_MODE to **True**. If DAQ is connected, set as **False**
+throwing errors. To set this, go into the config.py file and change the variable DEBUG_MODE to **True**. If DAQ is connected, change to **False**
 
 ## Usage
 
@@ -49,8 +49,8 @@ This is where the device name, channel configurations, and sample rate/size is s
 This is where each channel can be independently controlled.
 
 - Toggle Output: Turns the channel on/off
-- Voltage RMS: Sets the RMS voltage of the channel (Not amplitude)
-- Frequency/Phase: <-- it does that
+- Voltage RMS: Sets the RMS voltage of the wave signal generated
+- Frequency/Phase: Changes frequency and phase. Frequency of 0 creates a DC signal.
 
 ### **Main Controls**
 
