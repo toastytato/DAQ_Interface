@@ -155,7 +155,7 @@ class ConfigParamTree(ParameterTree):
             },
         ]
 
-        # add in the different channels
+        # add in the different channels dynamically
         for ch in CHANNEL_NAMES:
             self.setting_params[0]["children"].append(
                 {

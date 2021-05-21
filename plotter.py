@@ -31,16 +31,29 @@ class SignalPlot(pg.PlotWidget):
 class LegendItem(QWidget):
     def __init__(self, color, name, channel):
         super().__init__()
-        self.color = color
-        text = name + " Input (Ch." + str(channel) + ")"
-        self.curve_label = QLabel(text)
+        self.curve_label = QLabel()
         self.curve_label.setAlignment(Qt.AlignCenter)
+
+        self.color = color
+        self.name = name
+        self.channel = channel
+
         layout = QHBoxLayout()
         layout.addWidget(self.curve_label)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(layout)
         self.update()  # calls paintEvent
+
+    @property
+    def channel(self):
+        return self._channel
+
+    @channel.setter
+    def channel(self, ch):
+        self._channel = ch
+        self.text = self.name + " Input (Ch." + str(self._channel) + ")"
+        self.curve_label.setText(self.text)
 
     def paintEvent(self, e):
         painter = QtGui.QPainter(self)
@@ -52,8 +65,6 @@ class LegendItem(QWidget):
         painter.drawLine(line_start, height / 2, line_start + line_length, height / 2)
 
 
-# TODO:
-#   change channel when settings updated
 class Legend(QWidget):
     def __init__(self, channels):
         super().__init__()
@@ -61,10 +72,16 @@ class Legend(QWidget):
         layout = QHBoxLayout()
         self.curve_colors = ["b", "g", "r", "c", "y", "m"]
 
-        for i, name in enumerate(CHANNEL_NAMES):
-            legend_item = LegendItem(
-                color=self.curve_colors[i], name=name, channel=channels[i]
-            )
-            layout.addWidget(legend_item)
+        self.legend_items = [
+            LegendItem(color=self.curve_colors[i], name=name, channel=channels[i])
+            for i, name in enumerate(CHANNEL_NAMES)
+        ]
+
+        for item in self.legend_items:
+            layout.addWidget(item)
 
         self.setLayout(layout)
+
+    def update_channels(self, channels):
+        for i, item in enumerate(self.legend_items):
+            item.channel = channels[i]
