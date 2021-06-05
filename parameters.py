@@ -31,21 +31,22 @@ class ChannelParamTree(ParameterTree):
                     {
                         "name": "Voltage RMS",
                         "type": "float",
-                        "value": self.settings.value(ch + "_Voltage"),
+                        "value": 0,
                         "step": 0.1,
+                        "limits": (MIN_VOLTAGE, MAX_VOLTAGE),
                         "suffix": "V",
                     },
                     {
                         "name": "Frequency",
                         "type": "float",
-                        "value": self.settings.value(ch + "_Frequency"),
+                        "value": 0,
                         "step": 1,
                         "suffix": "Hz",
                     },
                     {
                         "name": "Phase Shift",
                         "type": "float",
-                        "value": self.settings.value(ch + "_Phase"),
+                        "value": 0,
                         "step": 10,
                         "suffix": u"\N{DEGREE SIGN}",
                     },
@@ -56,6 +57,12 @@ class ChannelParamTree(ParameterTree):
         self.param = Parameter.create(
             name="channel params", type="group", children=self.channel_params
         )
+        if self.settings.value("State") != None:
+            self.state = self.settings.value("State")
+            self.param.restoreState(self.state)
+        else:
+            print("No saved parameters, loading default")
+
         self.setParameters(self.param, showTop=False)
         # When the params change, send to method to emit.
         self.param.sigTreeStateChanged.connect(self.send_change)
@@ -80,21 +87,8 @@ class ChannelParamTree(ParameterTree):
         return param.setValue(newVal)
 
     def save_settings(self):
-        for ch in CHANNEL_NAMES:
-            print(self.get_param_value("Output " + ch, "Voltage RMS"))
-            self.settings.setValue(
-                ch + "_Voltage",
-                self.get_param_value("Output " + ch, "Voltage RMS"),
-            )
-
-            self.settings.setValue(
-                ch + "_Frequency",
-                self.get_param_value("Output " + ch, "Frequency"),
-            )
-            self.settings.setValue(
-                ch + "_Phase",
-                self.get_param_value("Output " + ch, "Phase Shift"),
-            )
+        self.state = self.param.saveState()
+        self.settings.setValue("State", self.state)
 
     def print(self):
         print("Settings")
@@ -118,17 +112,17 @@ class ConfigParamTree(ParameterTree):
                     {
                         "name": "Device Name",
                         "type": "str",
-                        "value": self.settings.value("Writer Device Name"),
+                        "value": "Dev1",
                     },
                     {
                         "name": "Sample Rate",
                         "type": "int",
-                        "value": self.settings.value("Writer Sample Rate"),
+                        "value": 1000,
                     },
                     {
                         "name": "Sample Size",
                         "type": "int",
-                        "value": self.settings.value("Writer Sample Size"),
+                        "value": 1000,
                     },
                 ],
             },
@@ -139,42 +133,49 @@ class ConfigParamTree(ParameterTree):
                     {
                         "name": "Device Name",
                         "type": "str",
-                        "value": self.settings.value("Reader Device Name"),
+                        "value": "Dev2",
                     },
                     {
                         "name": "Sample Rate",
                         "type": "int",
-                        "value": self.settings.value("Reader Sample Rate"),
+                        "value": 1000,
                     },
                     {
                         "name": "Sample Size",
                         "type": "int",
-                        "value": self.settings.value("Reader Sample Size"),
+                        "value": 1000,
                     },
                 ],
             },
         ]
 
         # add in the different channels dynamically
-        for ch in CHANNEL_NAMES:
+        for i, ch in enumerate(CHANNEL_NAMES):
             self.setting_params[0]["children"].append(
                 {
                     "name": ch + " Output Channel",
                     "type": "int",
-                    "value": self.settings.value(ch + " Output Channel"),
+                    "value": i,
                 }
             )
             self.setting_params[1]["children"].append(
                 {
                     "name": ch + " Input Channel",
                     "type": "int",
-                    "value": self.settings.value(ch + " Input Channel"),
+                    "value": i,
                 }
             )
 
         self.param = Parameter.create(
             name="setting params", type="group", children=self.setting_params
         )
+
+        if self.settings.value("State") != None:
+            self.state = self.settings.value("State")
+            self.param.restoreState(self.state)
+        else:
+            print("No saved parameters, loading default")
+
         self.setParameters(self.param, showTop=False)
         # When the params change, send to method to emit.
         self.param.sigTreeStateChanged.connect(self.send_change)
@@ -207,41 +208,8 @@ class ConfigParamTree(ParameterTree):
 
     # saves parameters into the Windows Registry
     def save_settings(self):
-        self.settings.setValue(
-            "Writer Device Name",
-            self.get_param_value("Writer Config", "Device Name"),
-        )
-        self.settings.setValue(
-            "Writer Sample Rate",
-            self.get_param_value("Writer Config", "Sample Rate"),
-        )
-        self.settings.setValue(
-            "Writer Sample Size",
-            self.get_param_value("Writer Config", "Sample Size"),
-        )
-
-        self.settings.setValue(
-            "Reader Device Name",
-            self.get_param_value("Reader Config", "Device Name"),
-        )
-        self.settings.setValue(
-            "Reader Sample Rate",
-            self.get_param_value("Reader Config", "Sample Rate"),
-        )
-        self.settings.setValue(
-            "Reader Sample Size",
-            self.get_param_value("Reader Config", "Sample Size"),
-        )
-
-        for ch in CHANNEL_NAMES:
-            self.settings.setValue(
-                ch + " Output Channel",
-                self.get_param_value("Writer Config", ch + " Output Channel"),
-            )
-            self.settings.setValue(
-                ch + " Input Channel",
-                self.get_param_value("Reader Config", ch + " Input Channel"),
-            )
+        self.state = self.param.saveState()
+        self.settings.setValue("State", self.state)
 
     def print(self):
         print("Settings")
@@ -254,8 +222,7 @@ class ControlsParamTree(ParameterTree):
     def __init__(self):
         super().__init__()
 
-        default_frequency = 0
-        default_voltage = 0
+        self.settings = QSettings("DAQ_Control", "Controls Param")
 
         self.control_params = [
             {
@@ -271,14 +238,14 @@ class ControlsParamTree(ParameterTree):
                     {
                         "name": "Voltage RMS",
                         "type": "float",
-                        "value": default_voltage,
+                        "value": 0,
                         "step": 0.1,
                         "suffix": "V",
                     },
                     {
                         "name": "Frequency",
                         "type": "float",
-                        "value": default_frequency,
+                        "value": 0,
                         "step": 1,
                         "suffix": "Hz",
                     },
@@ -295,6 +262,13 @@ class ControlsParamTree(ParameterTree):
             name="control params", type="group", children=self.control_params
         )
         # self.param.addChild(parameterTypes.ListParameter())
+
+        if self.settings.value("State") != None:
+            self.state = self.settings.value("State")
+            self.param.restoreState(self.state)
+        else:
+            print("No saved parameters, loading default")
+
         self.setParameters(self.param, showTop=False)
         # When the params change, send to method to emit.
         self.param.sigTreeStateChanged.connect(self.send_change)
@@ -310,6 +284,10 @@ class ControlsParamTree(ParameterTree):
     def set_param_value(self, branch, child, value):
         """Set the current value of a parameter."""
         return self.param.param(branch, child).setValue(value)
+
+    def save_settings(self):
+        self.state = self.param.saveState()
+        self.settings.setValue("State", self.state)
 
     def print(self):
         print("Controls")

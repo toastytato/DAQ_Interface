@@ -266,6 +266,7 @@ class MainWindow(QMainWindow):
 
         self.channel_param_tree.save_settings()
         self.setting_param_tree.save_settings()
+        self.controls_param_tree.save_settings()
 
 
 if __name__ == "__main__":
