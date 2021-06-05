@@ -67,20 +67,14 @@ class SignalWriter(QtCore.QObject):
         self.exit = False
 
         self.daq_out_name = dev_name
-        self.signal_rate = sample_rate  # signals per second
-        self.write_chunk_size = sample_size
-        self.chunks_per_second = sample_rate / sample_size
-        # size of chunk to write (nearest floor integer)
-        if len(voltages) != len(frequencies):
-            print("ERROR: voltage list size not the same as frequency list size")
+        self.sample_rate = sample_rate  # signal points per second
+        self.sample_size = sample_size  # number of signals sent each pass
 
         self.num_channels = len(channels)
         self.output_channels = channels
         self.output_state = [False] * self.num_channels
         self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
-        self.output_waveform = np.empty(
-            shape=(self.num_channels, self.write_chunk_size)
-        )
+        self.output_waveform = np.empty(shape=(self.num_channels, self.sample_size))
 
         self.voltages = voltages
         self.frequencies = frequencies
@@ -98,9 +92,9 @@ class SignalWriter(QtCore.QObject):
             self.task.ao_channels.add_ao_voltage_chan(channel_name)
 
         signals_in_buffer = 4
-        buffer_length = self.write_chunk_size * signals_in_buffer
+        buffer_length = self.sample_size * signals_in_buffer
         self.task.timing.cfg_samp_clk_timing(
-            rate=self.signal_rate,
+            rate=self.sample_rate,
             samps_per_chan=buffer_length,
             sample_mode=AcquisitionType.CONTINUOUS,
         )
@@ -122,19 +116,14 @@ class SignalWriter(QtCore.QObject):
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
 
+        # time between each pass to send a chunk of the signal
         try:
             self.signal_time = 1000 * (self.sample_size / self.sample_rate)
-        except ZeroDivisionError as e:
+        except ZeroDivisionError:
             print("Sample Rate should not be zero, setting to 1")
             self.signal_time = 1000 * (self.sample_size)
 
         self.timer.timeout.connect(self.write_signal_to_buffer)
-
-    #     # start thread (calls self.run)
-    #     self.start()
-    #
-    # def run(self):
-    #     self.exec_()
 
     def write_signal_to_buffer(self):
         # print("Writing wave to task {} at {} V, {} Hz".format(self.output_state, self.voltages, self.frequencies))
@@ -144,11 +133,11 @@ class SignalWriter(QtCore.QObject):
                     self.voltages[i],
                     self.frequencies[i],
                     self.shifts[i],
-                    self.signal_rate,
-                    self.write_chunk_size,
+                    self.sample_rate,
+                    self.sample_size,
                 )
             else:
-                self.output_waveform[i] = np.zeros(self.write_chunk_size)
+                self.output_waveform[i] = np.zeros(self.sample_size)
 
         try:
             self.writer.write_many_sample(self.output_waveform)
@@ -221,7 +210,7 @@ class DebugSignalGenerator(QtCore.QObject):
 
         try:
             self.signal_time = 1000 * (self.sample_size / self.sample_rate)
-        except ZeroDivisionError as e:
+        except ZeroDivisionError:
             print("Sample Rate should not be zero, setting to 1")
             self.signal_time = 1000 * (self.sample_size)
 
