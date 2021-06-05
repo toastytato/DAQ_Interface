@@ -34,12 +34,18 @@ class LegendItem(QWidget):
         self.curve_label = QLabel()
         self.curve_label.setAlignment(Qt.AlignCenter)
 
+        self.current_rms_label = QLabel()
+        self.current_rms_label.setAlignment(Qt.AlignCenter)
+
+        self._current = 0
+
         self.color = color
         self.name = name
         self.channel = channel
 
-        layout = QHBoxLayout()
+        layout = QVBoxLayout()
         layout.addWidget(self.curve_label)
+        layout.addWidget(self.current_rms_label)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(layout)
@@ -55,6 +61,10 @@ class LegendItem(QWidget):
         self.text = self.name + " Input (Ch." + str(self._channel) + ")"
         self.curve_label.setText(self.text)
 
+    def set_current_rms(self, data):
+        rms = np.sqrt(np.mean(data ** 2))
+        self.current_rms_label.setText(rms)
+
     def paintEvent(self, e):
         painter = QtGui.QPainter(self)
         painter.setPen(QtGui.QPen(pg.mkColor(self.color), 3, Qt.SolidLine))
@@ -62,7 +72,10 @@ class LegendItem(QWidget):
         width, height = painter.device().width(), painter.device().height()
         line_length = 25
         line_start = width / 2 - 70
-        painter.drawLine(line_start, height / 2, line_start + line_length, height / 2)
+        line_height_start = 7
+        painter.drawLine(
+            line_start, line_height_start, line_start + line_length, line_height_start
+        )
 
 
 class Legend(QWidget):
@@ -85,3 +98,7 @@ class Legend(QWidget):
     def update_channels(self, channels):
         for i, item in enumerate(self.legend_items):
             item.channel = channels[i]
+
+    def on_new_data(self, data):
+        for i, item in self.legend_items:
+            item.set_current_rms(data[i])

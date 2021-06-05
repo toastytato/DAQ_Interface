@@ -11,8 +11,6 @@ from plotter import *
 
 
 # TODO:
-#   Graph legend for channels
-#
 
 
 class MainWindow(QMainWindow):
@@ -109,6 +107,7 @@ class MainWindow(QMainWindow):
                 ),
             )
             self.read_thread.incoming_data.connect(self.plotter.update_plot)
+            self.read_thread.incoming_data.connect(self.legend.on_new_data)
             self.read_thread.start()
 
             # initiate writer for analog output
