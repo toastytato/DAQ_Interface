@@ -63,7 +63,7 @@ class LegendItem(QWidget):
 
     def set_current_rms(self, data):
         rms = np.sqrt(np.mean(data ** 2))
-        self.current_rms_label.setText(rms)
+        self.current_rms_label.setText("Current RMS: " + str(round(rms, 3)))
 
     def paintEvent(self, e):
         painter = QtGui.QPainter(self)
@@ -100,5 +100,5 @@ class Legend(QWidget):
             item.channel = channels[i]
 
     def on_new_data(self, data):
-        for i, item in self.legend_items:
+        for i, item in enumerate(self.legend_items):
             item.set_current_rms(data[i])
