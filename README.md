@@ -17,7 +17,7 @@ For newer machines, install Python 3.8.9 and the following modules:
 
 ```
 pip install nidaqmx
-pip install pyqt5
+pip install pyqt5==5.14.0
 pip install pyqtgraph
 ```
 
@@ -61,6 +61,15 @@ This is where synchronous channel manipulations are controlled.
 
 - ~~Update channels in legend when settings are committed~~
 - ???
+
+## NWM Troubleshooting Tips
+
+This is a myriad of solutions I had to use to figure out how to run a bunch of stuff on different systems
+
+NWM Software:
+
+- QT Creator wouldn't run on Debian/Ubuntu ("Failed to load platform plugin "xcb"...), solution somewhere in here
+  https://forum.qt.io/topic/93247/qt-qpa-plugin-could-not-load-the-qt-platform-plugin-xcb-in-even-though-it-was-found/66
 
 ## Credits
 

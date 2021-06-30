@@ -37,7 +37,7 @@ class SignalReader(QtCore.QThread):
                 task.ai_channels.add_ai_voltage_chan(channel_name)
                 print(channel_name)
         except Exception as e:
-            print("DAQ is not connected, task could not be created")
+            print("DAQ is not connected, channel could not be added")
             return
 
         task.timing.cfg_samp_clk_timing(

@@ -54,6 +54,7 @@ class SignalWriter(QtCore.QObject):
         voltages,
         frequencies,
         shifts,
+        output_states,
         sample_rate,
         sample_size,
         channels,
@@ -72,7 +73,7 @@ class SignalWriter(QtCore.QObject):
 
         self.num_channels = len(channels)
         self.output_channels = channels
-        self.output_state = [False] * self.num_channels
+        self.output_state = output_states
         self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
         self.output_waveform = np.empty(shape=(self.num_channels, self.sample_size))
 
@@ -181,7 +182,9 @@ class DebugSignalGenerator(QtCore.QObject):
 
     new_data = QtCore.pyqtSignal(object)
 
-    def __init__(self, voltages, frequencies, shifts, sample_rate, sample_size):
+    def __init__(
+        self, voltages, frequencies, shifts, output_states, sample_rate, sample_size
+    ):
         super().__init__()
 
         self.event_trigger = False
@@ -193,7 +196,7 @@ class DebugSignalGenerator(QtCore.QObject):
         num_channels = len(CHANNEL_NAMES)
 
         self.is_running = False
-        self.output_state = [False] * num_channels
+        self.output_state = output_states
         print(self.output_state)
 
         self.voltages = voltages

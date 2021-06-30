@@ -5,6 +5,33 @@ from PyQt5.QtCore import *
 
 import pyqtgraph as pg
 import numpy as np
+import math
+
+# TODO:
+#   account for 0 freq (DC)
+#   if period > sample size --> rms of sample size
+def calculate_rms_value(data, sample_rate, frequency):
+    # freq = cycles / sec
+    # period = 1 / freq
+    # rate = samples / sec
+    # data = samples
+    # samples / cycle = rate * period
+
+    if frequency != 0:
+        num_samples_in_period = int(sample_rate * (1 / frequency))
+
+        if num_samples_in_period < 500:
+            num_samples_in_period = 500
+    else:
+        return data[0]  # only need 1st data point since DC
+
+    # period_data = data[:num_samples_in_period]
+    period_data = data
+    print(len(period_data))
+    rms = round(np.sqrt(np.mean(period_data ** 2)), 3)
+
+    return rms
+
 
 # Graph Widget
 class SignalPlot(pg.PlotWidget):
@@ -37,7 +64,9 @@ class LegendItem(QWidget):
         self.current_rms_label = QLabel()
         self.current_rms_label.setAlignment(Qt.AlignCenter)
 
-        self._current = 0
+        self.sample_rate = int()
+        self.frequency = float()
+        self.current = float()
 
         self.color = color
         self.name = name
@@ -62,7 +91,7 @@ class LegendItem(QWidget):
         self.curve_label.setText(self.text)
 
     def set_current_rms(self, data):
-        rms = np.sqrt(np.mean(data ** 2))
+        rms = str(calculate_rms_value(data, self.sample_rate, self.frequency))
         self.current_rms_label.setText(rms)
 
     def paintEvent(self, e):
@@ -99,6 +128,12 @@ class Legend(QWidget):
         for i, item in enumerate(self.legend_items):
             item.channel = channels[i]
 
+    def update_rms_params(self, sample_rate, frequencies=None):
+        for i, item in enumerate(self.legend_items):
+            item.sample_rate = sample_rate
+            if frequencies is not None:
+                item.frequency = frequencies[i]
+
     def on_new_data(self, data):
-        for i, item in self.legend_items:
+        for i, item in enumerate(self.legend_items):
             item.set_current_rms(data[i])

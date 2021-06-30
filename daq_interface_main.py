@@ -46,6 +46,8 @@ class MainWindow(QMainWindow):
         title = QLabel("DAQ Controller")
         title.setAlignment(Qt.AlignHCenter)
         self.legend = Legend(self.setting_param_tree.get_read_channels())
+
+        # TODO: update legend frequency on startup with param tree values
         self.plotter = SignalPlot(self.legend)
         # self.plotter.setMaximumSize(800, 360)
 
@@ -79,6 +81,7 @@ class MainWindow(QMainWindow):
         voltages = []
         frequencies = []
         shifts = []
+        output_states = []
         for ch in CHANNEL_NAMES:
             branch = "Output " + ch
             voltages.append(
@@ -90,6 +93,16 @@ class MainWindow(QMainWindow):
             shifts.append(
                 self.channel_param_tree.get_param_value(branch, "Phase Shift")
             )
+            output_states.append(
+                self.channel_param_tree.get_param_value(branch, "Toggle Output")
+            )
+
+        self.legend.update_rms_params(
+            sample_rate=self.setting_param_tree.get_param_value(
+                "Writer Config", "Sample Rate"
+            ),
+            frequencies=frequencies,
+        )
 
         # When NI instrument is attached
         if not DEBUG_MODE:
@@ -117,6 +130,7 @@ class MainWindow(QMainWindow):
                 voltages=voltages,
                 frequencies=frequencies,
                 shifts=shifts,
+                output_states=output_states,
                 sample_rate=self.setting_param_tree.get_param_value(
                     "Writer Config", "Sample Rate"
                 ),
@@ -137,6 +151,7 @@ class MainWindow(QMainWindow):
                 voltages=voltages,
                 frequencies=frequencies,
                 shifts=shifts,
+                output_states=output_states,
                 sample_rate=self.setting_param_tree.get_param_value(
                     "Writer Config", "Sample Rate"
                 ),
@@ -145,6 +160,7 @@ class MainWindow(QMainWindow):
                 ),
             )
             self.writer.new_data.connect(self.plotter.update_plot)
+            self.writer.new_data.connect(self.legend.on_new_data)
 
         # pass by reference writer so field generator can manipulate it when it needs to
         self.field_generator = RotationalFieldGenerator(self.writer)
@@ -165,6 +181,12 @@ class MainWindow(QMainWindow):
         print("Commit settings btn pressed")
 
         self.legend.update_channels(self.setting_param_tree.get_read_channels())
+
+        self.legend.update_rms_params(
+            sample_rate=self.setting_param_tree.get_param_value(
+                "Writer Config", "Sample Rate"
+            )
+        )
 
         if not DEBUG_MODE:
             # TODO:
@@ -227,6 +249,7 @@ class MainWindow(QMainWindow):
                 self.writer.voltages[ch] = data
             if path[1] == "Frequency":
                 self.writer.frequencies[ch] = data
+                self.legend.legend_items[ch].frequency = data
             if path[1] == "Phase Shift":
                 self.writer.shifts[ch] = data
 
