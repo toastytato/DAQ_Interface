@@ -147,6 +147,8 @@ class MainWindow(QMainWindow):
         # Debugging on computer without NI instrument
         else:
             # Use software signal generator and read from that
+            # Plot is displaying the samples and rate at which the real
+            # signal generator would write to the output DAQ
             self.writer = DebugSignalGenerator(
                 voltages=voltages,
                 frequencies=frequencies,
@@ -180,13 +182,22 @@ class MainWindow(QMainWindow):
     def save_settings_btn_click(self):
         print("Commit settings btn pressed")
 
+        writer_sample_rate = self.setting_param_tree.get_param_value(
+            "Writer Config", "Sample Rate"
+        )
+        writer_sample_size = self.setting_param_tree.get_param_value(
+            "Writer Config", "Sample Size"
+        )
+        reader_sample_rate = self.setting_param_tree.get_param_value(
+            "Reader Config", "Sample Rate"
+        )
+        reader_sample_size = self.setting_param_tree.get_param_value(
+            "Reader Config", "Sample Size"
+        )
+
         self.legend.update_channels(self.setting_param_tree.get_read_channels())
 
-        self.legend.update_rms_params(
-            sample_rate=self.setting_param_tree.get_param_value(
-                "Writer Config", "Sample Rate"
-            )
-        )
+        self.legend.update_rms_params(sample_rate=writer_sample_rate)
 
         if not DEBUG_MODE:
             # TODO:
@@ -203,18 +214,24 @@ class MainWindow(QMainWindow):
             self.read_thread.input_channels = (
                 self.setting_param_tree.get_read_channels()
             )
-            self.read_thread.sample_rate = self.setting_param_tree.get_param_value(
-                "Reader Config", "Sample Rate"
-            )
-            self.read_thread.sample_size = self.setting_param_tree.get_param_value(
-                "Reader Config", "Sample Size"
-            )
+            self.read_thread.sample_rate = reader_sample_rate
+            self.read_thread.sample_size = reader_sample_size
 
-            self.channel_param_tree.save_settings()
+            self.writer.sample_rate = writer_sample_rate
+            self.writer.sample_size = writer_sample_size
 
             # start the task again
             self.read_thread.start()
+            # restart writer to update refresh times
+            self.writer.pause()
+            self.writer.resume()
+
         else:
+            self.writer.sample_rate = writer_sample_rate
+            self.writer.sample_size = writer_sample_size
+            # update refresh times in debug writer
+            self.writer.pause()
+            self.writer.resume()
             print("Restarted signal reader")
 
     @pyqtSlot(int)

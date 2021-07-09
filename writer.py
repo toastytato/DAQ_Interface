@@ -68,8 +68,8 @@ class SignalWriter(QtCore.QObject):
         self.exit = False
 
         self.daq_out_name = dev_name
-        self.sample_rate = sample_rate  # signal points per second
-        self.sample_size = sample_size  # number of signals sent each pass
+        self.sample_rate = sample_rate  # resolution (signals/second)
+        self.sample_size = sample_size  # buffer size sent on each callback
 
         self.num_channels = len(channels)
         self.output_channels = channels
@@ -81,6 +81,26 @@ class SignalWriter(QtCore.QObject):
         self.frequencies = frequencies
         self.shifts = shifts
 
+    @property
+    def sample_size(self):
+        return self._sample_size
+
+    @sample_size.setter
+    def sample_size(self, value):
+        self._sample_size = value
+        self.output_waveform = np.empty(shape=(self.num_channels, self._sample_size))
+        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
+
+    @property
+    def sample_rate(self):
+        return self._sample_rate
+
+    @sample_rate.setter
+    def sample_rate(self, value):
+        self._sample_size = value
+        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
+
+    # create the NI task for writing to DAQ
     def create_task(self):
         try:
             self.task = nidaqmx.Task()
@@ -116,13 +136,6 @@ class SignalWriter(QtCore.QObject):
 
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-
-        # time between each pass to send a chunk of the signal
-        try:
-            self.signal_time = 1000 * (self.sample_size / self.sample_rate)
-        except ZeroDivisionError:
-            print("Sample Rate should not be zero, setting to 1")
-            self.signal_time = 1000 * (self.sample_size)
 
         self.timer.timeout.connect(self.write_signal_to_buffer)
 
@@ -190,10 +203,7 @@ class DebugSignalGenerator(QtCore.QObject):
         self.event_trigger = False
         self.exit = False
 
-        if len(voltages) != len(frequencies):
-            print("Error: voltage list size not the same as frequency list size")
-
-        num_channels = len(CHANNEL_NAMES)
+        self.num_channels = len(CHANNEL_NAMES)
 
         self.is_running = False
         self.output_state = output_states
@@ -204,20 +214,23 @@ class DebugSignalGenerator(QtCore.QObject):
         self.shifts = shifts
         self.sample_rate = sample_rate
         self.sample_size = sample_size
-        self.output = np.empty(shape=(num_channels, self.sample_size))
 
-        self.wave_gen = [WaveGenerator() for i in range(num_channels)]
+        self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
 
         self.timer = QtCore.QTimer()
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
 
-        try:
-            self.signal_time = 1000 * (self.sample_size / self.sample_rate)
-        except ZeroDivisionError:
-            print("Sample Rate should not be zero, setting to 1")
-            self.signal_time = 1000 * (self.sample_size)
-
         self.timer.timeout.connect(self.callback)
+
+    @property
+    def sample_size(self):
+        return self._sample_size
+
+    @sample_size.setter
+    def sample_size(self, value):
+        self._sample_size = value
+        self.output_waveform = np.empty(shape=(self.num_channels, self._sample_size))
+        self.signal_time = 1000 * (self._sample_size / self.sample_rate)
 
     def resume(self):
         print("Signal resumed")
@@ -233,13 +246,13 @@ class DebugSignalGenerator(QtCore.QObject):
 
     # makes sure all waveforms start at the same place so phase shifts work as intended for multi-channel processes
     def realign_channels(self):
-        for i in range(len(self.output)):
+        for i in range(len(self.output_waveform)):
             self.wave_gen[i].reset_counter()
 
     def callback(self):
-        for i in range(len(self.output)):
+        for i in range(len(self.output_waveform)):
             if self.output_state[i]:
-                self.output[i] = self.wave_gen[i].generate_wave(
+                self.output_waveform[i] = self.wave_gen[i].generate_wave(
                     self.voltages[i],
                     self.frequencies[i],
                     self.shifts[i],
@@ -247,9 +260,9 @@ class DebugSignalGenerator(QtCore.QObject):
                     self.sample_size,
                 )
             else:
-                self.output[i] = np.zeros(self.sample_size)
+                self.output_waveform[i] = np.zeros(self.sample_size)
 
-        self.new_data.emit(self.output)
+        self.new_data.emit(self.output_waveform)
 
     def end(self):
         self.is_running = False
@@ -263,22 +276,6 @@ class WaveGenerator:
         self.counter = 0
         self.last_freq = 0
         self.output_times = []
-
-    def generate_n_periods(self, voltage, frequency, shift, sample_rate, num=1):
-        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
-
-        rad_per_sec = 2 * np.pi * frequency
-        samples_per_period = int(sample_rate / rad_per_sec)
-
-        phase_shift = 2 * np.pi * shift / 360
-
-        self.output_times = np.linspace(
-            start=0, stop=num / frequency, num=samples_per_period * num
-        )
-        output_waveform = amplitude * np.sin(
-            self.output_times * rad_per_sec - phase_shift
-        )
-        return output_waveform
 
     def reset_counter(self):
         self.reset = True
@@ -328,6 +325,23 @@ class WaveGenerator:
             self.output_times * rad_per_sec + freq_shifter - phase_shift
         )
 
+        return output_waveform
+
+    # less used
+    def generate_n_periods(self, voltage, frequency, shift, sample_rate, num=1):
+        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
+
+        rad_per_sec = 2 * np.pi * frequency
+        samples_per_period = int(sample_rate / rad_per_sec)
+
+        phase_shift = 2 * np.pi * shift / 360
+
+        self.output_times = np.linspace(
+            start=0, stop=num / frequency, num=samples_per_period * num
+        )
+        output_waveform = amplitude * np.sin(
+            self.output_times * rad_per_sec - phase_shift
+        )
         return output_waveform
 
 

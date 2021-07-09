@@ -27,7 +27,7 @@ def calculate_rms_value(data, sample_rate, frequency):
 
     # period_data = data[:num_samples_in_period]
     period_data = data
-    print(len(period_data))
+    # print(len(period_data))
     rms = round(np.sqrt(np.mean(period_data ** 2)), 3)
 
     return rms
@@ -48,6 +48,9 @@ class SignalPlot(pg.PlotWidget):
         self.pens = [pg.mkPen(i, width=self.line_width) for i in self.curve_colors]
         self.showGrid(y=True)
         # self.disableAutoRange('y')
+
+        self.setLabel("left", "Voltage", units="V")
+        self.setLabel("bottom", "Samples")
 
     def update_plot(self, incoming_data):
         self.clear()

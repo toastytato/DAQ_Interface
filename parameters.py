@@ -139,11 +139,13 @@ class ConfigParamTree(ParameterTree):
                         "name": "Sample Rate",
                         "type": "int",
                         "value": 1000,
+                        "limits": (1, 10000),
                     },
                     {
                         "name": "Sample Size",
                         "type": "int",
-                        "value": 1000,
+                        "Value": 1000,
+                        "limits": (1, 10000),
                     },
                 ],
             },
@@ -226,7 +228,7 @@ class ControlsParamTree(ParameterTree):
 
         self.control_params = [
             {
-                "name": "Rotating Field",
+                "name": "3D Alignment",
                 "type": "group",
                 "children": [
                     {
@@ -236,11 +238,10 @@ class ControlsParamTree(ParameterTree):
                         "tip": "Toggle the output",
                     },
                     {
-                        "name": "Voltage RMS",
+                        "name": "Amplitude",
                         "type": "float",
                         "value": 0,
                         "step": 0.1,
-                        "suffix": "V",
                     },
                     {
                         "name": "Frequency",
@@ -250,12 +251,110 @@ class ControlsParamTree(ParameterTree):
                         "suffix": "Hz",
                     },
                     {
-                        "name": "Arrangement",
-                        "type": "list",
-                        "values": ["0 - 1 - 2", "0 - 2 - 1"],
+                        "name": "Elevation",
+                        "type": "float",
+                        "value": 0,
+                        "step": 0.1,
+                        "suffix": "\N{DEGREE SIGN}",
+                    },
+                    {
+                        "name": "Z-phase",
+                        "type": "float",
+                        "value": 0,
+                        "step": 0.1,
+                        "suffix": "\N{DEGREE SIGN}",
+                    },
+                    {
+                        "name": "Coefficients",
+                        "type": "group",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "name": "kx",
+                                "type": "float",
+                                "value": 1,
+                                "step": 0.1,
+                            },
+                            {
+                                "name": "ky",
+                                "type": "float",
+                                "value": 1,
+                                "step": 0.1,
+                            },
+                            {
+                                "name": "kz",
+                                "type": "float",
+                                "value": 2,
+                                "step": 0.1,
+                            },
+                        ],
                     },
                 ],
-            }
+            },
+            {
+                "name": "3D Rotation",
+                "type": "group",
+                "children": [
+                    {
+                        "name": "Toggle Output",
+                        "type": "bool",
+                        "value": False,
+                        "tip": "Toggle the output",
+                    },
+                    {
+                        "name": "Amplitude",
+                        "type": "float",
+                        "value": 0,
+                        "step": 0.1,
+                    },
+                    {
+                        "name": "Frequency",
+                        "type": "float",
+                        "value": 0,
+                        "step": 1,
+                        "suffix": "Hz",
+                    },
+                    {
+                        "name": "Elevation",
+                        "type": "float",
+                        "value": 0,
+                        "step": 0.1,
+                        "suffix": "\N{DEGREE SIGN}",
+                    },
+                    {
+                        "name": "Azimuth ",
+                        "type": "float",
+                        "value": 0,
+                        "step": 0.1,
+                        "suffix": "\N{DEGREE SIGN}",
+                    },
+                    {
+                        "name": "Coefficients",
+                        "type": "group",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "name": "kx",
+                                "type": "float",
+                                "value": 1,
+                                "step": 0.1,
+                            },
+                            {
+                                "name": "ky",
+                                "type": "float",
+                                "value": 1,
+                                "step": 0.1,
+                            },
+                            {
+                                "name": "kz",
+                                "type": "float",
+                                "value": 2,
+                                "step": 0.1,
+                            },
+                        ],
+                    },
+                ],
+            },
         ]
 
         self.param = Parameter.create(
@@ -265,7 +364,7 @@ class ControlsParamTree(ParameterTree):
 
         if self.settings.value("State") != None:
             self.state = self.settings.value("State")
-            self.param.restoreState(self.state)
+            # self.param.restoreState(self.state)
         else:
             print("No saved parameters, loading default")
 
