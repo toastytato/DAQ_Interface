@@ -23,6 +23,7 @@ class MainWindow(QMainWindow):
         self.start_signal_btn.clicked.connect(self.start_signal_btn_click)
         self.save_settings_btn.clicked.connect(self.save_settings_btn_click)
         self.tabs.currentChanged.connect(self.on_tab_change)
+        
         self.controls_param_tree.paramChange.connect(self.controls_param_change)
         self.channel_param_tree.paramChange.connect(self.channels_param_change)
         self.setting_param_tree.paramChange.connect(self.settings_param_change)
@@ -126,7 +127,7 @@ class MainWindow(QMainWindow):
             # initiate writer for analog output
             # not handled on separate thread b/c not blocking
 
-            self.writer = SignalWriter(
+            self.writer = SignalWriterDAQ(
                 voltages=voltages,
                 frequencies=frequencies,
                 shifts=shifts,
@@ -149,7 +150,7 @@ class MainWindow(QMainWindow):
             # Use software signal generator and read from that
             # Plot is displaying the samples and rate at which the real
             # signal generator would write to the output DAQ
-            self.writer = DebugSignalGenerator(
+            self.writer = SignalGeneratorBase(
                 voltages=voltages,
                 frequencies=frequencies,
                 shifts=shifts,
@@ -164,7 +165,7 @@ class MainWindow(QMainWindow):
             self.writer.new_data.connect(self.plotter.update_plot)
             self.writer.new_data.connect(self.legend.on_new_data)
 
-        # pass by reference writer so field generator can manipulate it when it needs to
+        # pass writer so field generator can manipulate it when it needs to
         self.field_generator = RotationalFieldGenerator(self.writer)
 
     @pyqtSlot()

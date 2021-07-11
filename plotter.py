@@ -8,8 +8,6 @@ import numpy as np
 import math
 
 # TODO:
-#   account for 0 freq (DC)
-#   if period > sample size --> rms of sample size
 def calculate_rms_value(data, sample_rate, frequency):
     # freq = cycles / sec
     # period = 1 / freq

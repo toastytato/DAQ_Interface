@@ -48,7 +48,88 @@ class RotationalFieldGenerator(QtCore.QObject):
             self.writer.output_state[ch] = False
 
 
-class SignalWriter(QtCore.QObject):
+class SignalGeneratorBase(QtCore.QObject):
+    """
+    Used as debug signal generator to create a waveform while debugging to create waveforms
+    without initializing NI method that can raise errors
+    """
+
+    new_data = QtCore.pyqtSignal(object)
+
+    def __init__(
+        self, voltages, frequencies, shifts, output_states, sample_rate, sample_size
+    ):
+        super().__init__()
+
+        self.is_running = False
+
+        self.num_channels = len(CHANNEL_NAMES)
+        self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
+
+        self.voltages = voltages
+        self.frequencies = frequencies
+        self.shifts = shifts
+        self.output_state = output_states
+        
+        self.sample_rate = sample_rate  # resolution (signals/second)
+        self.sample_size = sample_size  # buffer size sent on each callback
+
+        self.timer = QtCore.QTimer()
+        self.timer.setTimerType(QtCore.Qt.PreciseTimer)
+
+        self.timer.timeout.connect(self.callback)
+
+    @property
+    def sample_size(self):
+        return self._sample_size
+
+    @sample_size.setter
+    def sample_size(self, value):
+        self._sample_size = value
+        self.output_waveform = np.empty(shape=(self.num_channels, self.sample_size))
+
+    # makes sure all waveforms start at the same place so phase shifts work as intended for multi-channel processes
+    def realign_channel_phases(self):
+        for i in range(self.num_channels):
+            self.wave_gen[i].reset_counter()
+
+    # callback for the Debug sig_gen to create signal and send to data reader
+    def callback(self):
+        for i in range(self.num_channels):
+            if self.output_state[i]:
+                self.output_waveform[i] = self.wave_gen[i].generate_wave(
+                    self.voltages[i],
+                    self.frequencies[i],
+                    self.shifts[i],
+                    self.sample_rate,
+                    self.sample_size,
+                )
+            else:
+                self.output_waveform[i] = np.zeros(self.sample_size)
+
+        self.new_data.emit(self.output_waveform)
+
+    def resume(self):
+        print("Signal resumed")
+        self.is_running = True
+        self.output_state = [True for x in range(self.num_channels)]
+        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
+        self.callback()
+        self.timer.start(self.signal_time)
+
+    def pause(self):
+        print("Signal paused")
+        self.is_running = False
+        self.output_state = [False for x in range(self.num_channels)]
+        self.callback()
+        self.timer.stop()
+
+    def end(self):
+        self.is_running = False
+        self.timer.stop()
+
+
+class SignalWriterDAQ(SignalGeneratorBase):
     def __init__(
         self,
         voltages,
@@ -60,34 +141,17 @@ class SignalWriter(QtCore.QObject):
         channels,
         dev_name="Dev1",
     ):
-        super().__init__()
-        self.writer = None
-        self.task_counter = 0
-
-        self.is_running = False
-        self.exit = False
-
-        self.daq_out_name = dev_name
-
-        self.num_channels = len(CHANNEL_NAMES)
+        super().__init__(
+            voltages,
+            frequencies,
+            shifts,
+            output_states,
+            sample_rate,
+            sample_size,
+        )
+        
         self.output_channels = channels
-        self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
-
-        self.voltages = voltages
-        self.frequencies = frequencies
-        self.shifts = shifts
-        self.output_state = output_states
-        self.sample_rate = sample_rate  # resolution (signals/second)
-        self.sample_size = sample_size  # buffer size sent on each callback
-
-    @property
-    def sample_size(self):
-        return self._sample_size
-
-    @sample_size.setter
-    def sample_size(self, value):
-        self._sample_size = value
-        self.output_waveform = np.empty(shape=(self.num_channels, self.sample_size))
+        self.daq_out_name = dev_name
 
     # create the NI task for writing to DAQ
     def create_task(self):
@@ -120,143 +184,25 @@ class SignalWriter(QtCore.QObject):
         self.writer = AnalogMultiChannelWriter(self.task.out_stream)
 
         # fill the buffer
-        self.write_signal_to_buffer()
-        self.write_signal_to_buffer()
+        self.callback()
+        self.callback()
 
-        self.timer = QtCore.QTimer()
-        self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-
-        self.timer.timeout.connect(self.write_signal_to_buffer)
-
-    def write_signal_to_buffer(self):
+    def callback(self):
         # print("Writing wave to task {} at {} V, {} Hz".format(self.output_state, self.voltages, self.frequencies))
-        for i in range(self.num_channels):
-            if self.output_state[i]:
-                self.output_waveform[i] = self.wave_gen[i].generate_wave(
-                    self.voltages[i],
-                    self.frequencies[i],
-                    self.shifts[i],
-                    self.sample_rate,
-                    self.sample_size,
-                )
-            else:
-                self.output_waveform[i] = np.zeros(self.sample_size)
-
-        try:
-            self.writer.write_many_sample(self.output_waveform)
-        except Exception as e:
-            print("Error writing:")
-            print(e)
-            return
-
-    # makes sure all waveforms start at the same place so phase shifts work as intended for multi-channel processes
-    def realign_channel_phases(self):
-        for i in range(self.num_channels):
-            self.wave_gen[i].reset_counter()
+        super().callback()
+        self.writer.write_many_sample(self.output_waveform)
 
     def resume(self):
-        print("Signal writer resumed")
-        self.is_running = True
-        self.write_signal_to_buffer()
-        self.write_signal_to_buffer()
-        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
-        self.timer.start(self.signal_time)
-        self.task.start()
+        self.callback() # extra callback to fill DAQ buffer
+        super().resume()
 
     def pause(self):
-        print("Signal writer paused")
-        self.is_running = False
-        self.timer.stop()
+        super().pause()
         self.task.stop()
 
     def end(self):
-        print("Signal writer stopped")
-        self.is_running = False
-        self.exit = True
-        self.timer.stop()
+        super().end()
         self.task.close()
-
-
-class DebugSignalGenerator(QtCore.QObject):
-    """
-    Used as debug signal generator to create a waveform while debugging to create waveforms
-    without initializing NI method that can raise errors
-    """
-
-    new_data = QtCore.pyqtSignal(object)
-
-    def __init__(
-        self, voltages, frequencies, shifts, output_states, sample_rate, sample_size
-    ):
-        super().__init__()
-
-        self.event_trigger = False
-        self.exit = False
-
-        self.num_channels = len(CHANNEL_NAMES)
-
-        self.is_running = False
-        self.output_state = output_states
-        print(self.output_state)
-
-        self.voltages = voltages
-        self.frequencies = frequencies
-        self.shifts = shifts
-        self.sample_rate = sample_rate
-        self.sample_size = sample_size
-
-        self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
-
-        self.timer = QtCore.QTimer()
-        self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-
-        self.timer.timeout.connect(self.callback)
-
-    @property
-    def sample_size(self):
-        return self._sample_size
-
-    @sample_size.setter
-    def sample_size(self, value):
-        self._sample_size = value
-        self.output_waveform = np.empty(shape=(self.num_channels, self.sample_size))
-
-    def resume(self):
-        print("Signal resumed")
-        self.is_running = True
-        self.callback()
-        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
-        self.timer.start(self.signal_time)
-
-    def pause(self):
-        print("Signal paused")
-        print("Slot doing stuff in:", QtCore.QThread.currentThread())
-        self.is_running = False
-        self.timer.stop()
-
-    # makes sure all waveforms start at the same place so phase shifts work as intended for multi-channel processes
-    def realign_channels(self):
-        for i in range(len(self.output_waveform)):
-            self.wave_gen[i].reset_counter()
-
-    def callback(self):
-        for i in range(len(self.output_waveform)):
-            if self.output_state[i]:
-                self.output_waveform[i] = self.wave_gen[i].generate_wave(
-                    self.voltages[i],
-                    self.frequencies[i],
-                    self.shifts[i],
-                    self.sample_rate,
-                    self.sample_size,
-                )
-            else:
-                self.output_waveform[i] = np.zeros(self.sample_size)
-
-        self.new_data.emit(self.output_waveform)
-
-    def end(self):
-        self.is_running = False
-        self.exit = True
 
 
 # creates the sine wave to output
@@ -340,112 +286,3 @@ if __name__ == "__main__":
 
     voltage = input("Input Voltage: ")
     frequency = input("Input Frequency: ")
-
-    writer = SignalWriter(
-        voltages=voltage,
-        frequencies=frequency,
-        shifts=0,
-        sample_rate=1000,
-        sample_size=500,
-        channels=[0],
-    )
-
-    writer.resume()
-
-    input("Press return to stop")
-    writer.end()
-
-    # writer.stop_signal()
-
-# # ---- DAQ Control method 1 based on MuControl ----
-#
-#     # tells thread to stop blocking and restart
-#     def restart(self):
-#         self.start_thread_flag.set()
-#
-#     # basically a one time call to start the write task
-#     def run(self):
-#         # first run, set start signal
-#         self.restart()
-#         # keep thread running
-#         while True:
-#             self.start_thread_flag.wait()
-#             self.start_thread_flag.clear()
-#             # checks flag for exiting thread
-#             if self.exit is True:
-#                 return
-#
-#             # flag for starting or ending nidaqmx.Task() object
-#             self.is_running = True
-#
-#             print("Signal Writer Run")
-#
-#             try:
-#                 self.task = nidaqmx.Task()  # Start the task
-#                 self.task_counter += 1
-#             except OSError:
-#                 print("DAQ is not connected, task could not be created")
-#                 continue
-#
-#             # Add input channels
-#             for i in range(NUM_CHANNELS):
-#                 channel_string = self.daq_out_name + '/' + f'ao{i}'
-#                 try:
-#                     print("Channel ", channel_string, " added to task ", self.task.name)
-#                     self.task.ao_channels.add_ao_voltage_chan(channel_string)
-#                 except Exception as e:
-#                     if i == 0:
-#                         print('Could not open write channels:')
-#                         print(e)
-#                         continue
-#
-#             print("Channel names: ", self.task.channel_names)
-#
-#             # Set the generation rate, and buffer size.
-#             self.task.timing.cfg_samp_clk_timing(
-#                 rate=self.signal_rate,
-#                 sample_mode=AcquisitionType.CONTINUOUS)
-#
-#             # Set more properties for continuous signal modulation
-#             self.task.out_stream.regen_mode = RegenerationMode.DONT_ALLOW_REGENERATION
-#             self.task.out_stream.output_buf_size = 4 * self.write_chunk_size
-#
-#             # Register the listening method to add more data
-#             try:
-#                 self.task.register_every_n_samples_transferred_from_buffer_event(
-#                     sample_interval=self.write_chunk_size,
-#                     callback_method=self.callback)
-#             except Exception as e:
-#                 print("Problem with callback method:")
-#                 print(e)
-#                 continue
-#
-#             # Initialize the writer
-#             self.writer = AnalogMultiChannelWriter(self.task.out_stream)
-#
-#             self.waveforms = self.package_waves(self.voltage, self.frequency, self.signal_rate, self.write_chunk_size)
-#
-#             # Write the first set of data into the output buffer
-#             try:
-#                 # Write two chunks of beginning data to avoid interruption
-#                 self.writer.write_many_sample(data=self.waveforms)
-#             except Exception as e:
-#                 print("Could not write to channel:")
-#                 print(e)
-#                 continue
-#
-#             self.writer.write_many_sample(data=self.waveforms)
-#             # start task, which will hold thread at this location continuously calling add_more_data
-#             self.task.start()
-#
-#     # called by the task listener method
-#     # won't get called when DAQ is not attached
-#     def callback(self, task_handle, every_n_samples_event_type, number_of_samples, callback_data):
-#         if self.is_running:
-#             self.waveforms = self.package_waves(self.voltage, self.freq, self.write_chunk_size)
-#             self.writer.write_many_sample(self.waveforms)
-#         else:
-#             print("closed write task")
-#             self.task.close()
-#
-#         return 0
