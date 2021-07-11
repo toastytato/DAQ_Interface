@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
         reader_sample_size = self.setting_param_tree.get_param_value(
             "Reader Config", "Sample Size"
         )
-
+        # update read channel names
         self.legend.update_channels(self.setting_param_tree.get_read_channels())
 
         self.legend.update_rms_params(sample_rate=writer_sample_rate)
@@ -239,10 +239,10 @@ class MainWindow(QMainWindow):
         print("changed to tab: ", t)
 
         if t == 0:
-            self.writer.realign_channels()
+            self.writer.realign_channel_phases()
             self.field_generator.resume_signal()
         elif t == 1:
-            self.writer.realign_channels()
+            self.writer.realign_channel_phases()
             for i, ch in enumerate(CHANNEL_NAMES):
                 parent = self.channel_param_tree.param.child("Output " + ch)
                 self.writer.output_state[i] = parent.child("Toggle Output").value()
@@ -251,6 +251,25 @@ class MainWindow(QMainWindow):
                 self.writer.shifts[i] = parent.child("Phase Shift").value()
         elif t == 2:
             pass
+
+    def controls_param_change(self, parameter, changes):
+        for param, change, data in changes:
+
+            path = self.controls_param_tree.param.childPath(param)
+
+            if path[1] == "Toggle Output":
+                if data:
+                    self.field_generator.resume_signal()
+                else:
+                    self.field_generator.pause_signal()
+            if path[1] == "Amplitude":
+                self.field_generator.voltage = data
+                print(self.writer.voltages)
+            if path[1] == "Frequency":
+                self.field_generator.frequency = data
+                print(self.writer.frequencies)
+            if path[1] == "Arrangement":
+                print(data)
 
     def channels_param_change(self, parameter, changes):
         # parameter: the GroupParameter object that holds the Channel Params
@@ -269,25 +288,6 @@ class MainWindow(QMainWindow):
                 self.legend.legend_items[ch].frequency = data
             if path[1] == "Phase Shift":
                 self.writer.shifts[ch] = data
-
-    def controls_param_change(self, parameter, changes):
-        for param, change, data in changes:
-
-            path = self.controls_param_tree.param.childPath(param)
-
-            if path[1] == "Toggle Output":
-                if data:
-                    self.field_generator.resume_signal()
-                else:
-                    self.field_generator.pause_signal()
-            if path[1] == "Voltage RMS":
-                self.field_generator.voltage = data
-                print(self.writer.voltages)
-            if path[1] == "Frequency":
-                self.field_generator.frequency = data
-                print(self.writer.frequencies)
-            if path[1] == "Arrangement":
-                print(data)
 
     def settings_param_change(self, parameter, changes):
         pass

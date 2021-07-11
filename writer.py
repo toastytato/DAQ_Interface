@@ -68,18 +68,17 @@ class SignalWriter(QtCore.QObject):
         self.exit = False
 
         self.daq_out_name = dev_name
-        self.sample_rate = sample_rate  # resolution (signals/second)
-        self.sample_size = sample_size  # buffer size sent on each callback
 
-        self.num_channels = len(channels)
+        self.num_channels = len(CHANNEL_NAMES)
         self.output_channels = channels
-        self.output_state = output_states
         self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
-        self.output_waveform = np.empty(shape=(self.num_channels, self.sample_size))
 
         self.voltages = voltages
         self.frequencies = frequencies
         self.shifts = shifts
+        self.output_state = output_states
+        self.sample_rate = sample_rate  # resolution (signals/second)
+        self.sample_size = sample_size  # buffer size sent on each callback
 
     @property
     def sample_size(self):
@@ -88,17 +87,7 @@ class SignalWriter(QtCore.QObject):
     @sample_size.setter
     def sample_size(self, value):
         self._sample_size = value
-        self.output_waveform = np.empty(shape=(self.num_channels, self._sample_size))
-        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
-
-    @property
-    def sample_rate(self):
-        return self._sample_rate
-
-    @sample_rate.setter
-    def sample_rate(self, value):
-        self._sample_size = value
-        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
+        self.output_waveform = np.empty(shape=(self.num_channels, self.sample_size))
 
     # create the NI task for writing to DAQ
     def create_task(self):
@@ -161,7 +150,7 @@ class SignalWriter(QtCore.QObject):
             return
 
     # makes sure all waveforms start at the same place so phase shifts work as intended for multi-channel processes
-    def realign_channels(self):
+    def realign_channel_phases(self):
         for i in range(self.num_channels):
             self.wave_gen[i].reset_counter()
 
@@ -170,6 +159,7 @@ class SignalWriter(QtCore.QObject):
         self.is_running = True
         self.write_signal_to_buffer()
         self.write_signal_to_buffer()
+        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
         self.timer.start(self.signal_time)
         self.task.start()
 
@@ -229,13 +219,13 @@ class DebugSignalGenerator(QtCore.QObject):
     @sample_size.setter
     def sample_size(self, value):
         self._sample_size = value
-        self.output_waveform = np.empty(shape=(self.num_channels, self._sample_size))
-        self.signal_time = 1000 * (self._sample_size / self.sample_rate)
+        self.output_waveform = np.empty(shape=(self.num_channels, self.sample_size))
 
     def resume(self):
         print("Signal resumed")
         self.is_running = True
         self.callback()
+        self.signal_time = 1000 * (self.sample_size / self.sample_rate)
         self.timer.start(self.signal_time)
 
     def pause(self):
