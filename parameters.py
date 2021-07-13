@@ -6,18 +6,62 @@ from PyQt5.QtCore import QSettings
 
 from config import *
 
-# data container for parameters controlling output and input on each channel
-class ChannelParamTree(ParameterTree):
+class ParamTreeBase(ParameterTree):
     # ParamTree will output a signal that has the param and the output
     paramChange = QtCore.pyqtSignal(object, object)
 
-    def __init__(self):
+    def __init__(self, name, params):
         super().__init__()
 
-        self.settings = QSettings("DAQ_Control", "Channels Param")
+        self.name = name
+        self.settings = QSettings("DAQ_Control", self.name)
 
+        self.param = Parameter.create(
+            name=self.name, type="group", children=params
+        )
+
+        if self.settings.value("State") != None and not RESET_DEFAULT_PARAMS:
+            self.state = self.settings.value("State")
+            self.param.restoreState(self.state)
+        else:
+            print("Loading default params for", self.name)
+
+        self.setParameters(self.param, showTop=False)
+        # When the params change, send to method to emit.
+        self.param.sigTreeStateChanged.connect(self.send_change)
+
+    def send_change(self, param, changes):
+        self.paramChange.emit(param, changes)
+
+    # Convienience methods for modifying parameter values.
+    def get_param_value(self, branch, child):
+        """Get the current value of a parameter."""
+        return self.param.param(branch, child).value()
+
+    def set_param_value(self, branch, child, value):
+        """Set the current value of a parameter."""
+        return self.param.param(branch, child).setValue(value)
+
+    def step_param_value(self, child, delta, branch):
+        """Change a parameter by a delta. Can be negative or positive."""
+        param = self.param.param(branch, child)
+        curVal = param.value()
+        newVal = curVal + delta
+        return param.setValue(newVal)
+
+    def save_settings(self):
+        self.state = self.param.saveState()
+        self.settings.setValue("State", self.state)
+
+    def print(self):
+        print(self.name)
+        print(self.param)
+
+# data container for parameters controlling output and input on each channel
+class ChannelParameters(ParamTreeBase):
+    def __init__(self):
         self.channel_params = []
-        for ch in CHANNEL_NAMES:
+        for ch in CHANNEL_NAMES_OUT:
             param = {
                 "name": "Output " + ch,
                 "type": "group",
@@ -54,56 +98,11 @@ class ChannelParamTree(ParameterTree):
             }
             self.channel_params.append(param)
 
-        self.param = Parameter.create(
-            name="channel params", type="group", children=self.channel_params
-        )
-        if self.settings.value("State") != None:
-            self.state = self.settings.value("State")
-            self.param.restoreState(self.state)
-        else:
-            print("No saved parameters, loading default")
-
-        self.setParameters(self.param, showTop=False)
-        # When the params change, send to method to emit.
-        self.param.sigTreeStateChanged.connect(self.send_change)
-
-    def send_change(self, param, changes):
-        self.paramChange.emit(param, changes)
-
-    # Convienience methods for modifying parameter values.
-    def get_param_value(self, branch, child):
-        """Get the current value of a parameter."""
-        return self.param.param(branch, child).value()
-
-    def set_param_value(self, branch, child, value):
-        """Set the current value of a parameter."""
-        return self.param.param(branch, child).setValue(value)
-
-    def step_param_value(self, child, delta, branch):
-        """Change a parameter by a delta. Can be negative or positive."""
-        param = self.param.param(branch, child)
-        curVal = param.value()
-        newVal = curVal + delta
-        return param.setValue(newVal)
-
-    def save_settings(self):
-        self.state = self.param.saveState()
-        self.settings.setValue("State", self.state)
-
-    def print(self):
-        print("Settings")
-        pprint.pprint(self.channel_params)
-
+        super().__init__(name="Channel Params", params=self.channel_params)        
 
 # data container for parameters controlling settings saved in configurations tab
-class ConfigParamTree(ParameterTree):
-    paramChange = QtCore.pyqtSignal(object, object)
-
+class ConfigParamTree(ParamTreeBase):
     def __init__(self):
-        super().__init__()
-
-        self.settings = QSettings("DAQ_Control", "Config Param")
-
         self.setting_params = [
             {
                 "name": "Writer Config",
@@ -150,9 +149,8 @@ class ConfigParamTree(ParameterTree):
                 ],
             },
         ]
-
         # add in the different channels dynamically
-        for i, ch in enumerate(CHANNEL_NAMES):
+        for i, ch in enumerate(CHANNEL_NAMES_OUT):
             self.setting_params[0]["children"].append(
                 {
                     "name": ch + " Output Channel",
@@ -160,6 +158,7 @@ class ConfigParamTree(ParameterTree):
                     "value": i,
                 }
             )
+        for i, ch in enumerate(CHANNEL_NAMES_IN):
             self.setting_params[1]["children"].append(
                 {
                     "name": ch + " Input Channel",
@@ -168,64 +167,26 @@ class ConfigParamTree(ParameterTree):
                 }
             )
 
-        self.param = Parameter.create(
-            name="setting params", type="group", children=self.setting_params
-        )
-
-        if self.settings.value("State") != None:
-            self.state = self.settings.value("State")
-            self.param.restoreState(self.state)
-        else:
-            print("No saved parameters, loading default")
-
-        self.setParameters(self.param, showTop=False)
-        # When the params change, send to method to emit.
-        self.param.sigTreeStateChanged.connect(self.send_change)
-
-    def send_change(self, param, changes):
-        self.paramChange.emit(param, changes)
-
-    # Convienience methods for modifying parameter values.
-    def get_param_value(self, branch, child):
-        """Get the current value of a parameter."""
-        return self.param.param(branch, child).value()
-
-    def set_param_value(self, branch, child, value):
-        """Set the current value of a parameter."""
-        return self.param.param(branch, child).setValue(value)
+        super().__init__(name="Config Param", params=self.setting_params)
 
     def get_read_channels(self):
         channels = [
             self.get_param_value("Reader Config", ch + " Input Channel")
-            for ch in CHANNEL_NAMES
+            for ch in CHANNEL_NAMES_IN
         ]
         return channels
 
     def get_write_channels(self):
         channels = [
             self.get_param_value("Writer Config", ch + " Output Channel")
-            for ch in CHANNEL_NAMES
+            for ch in CHANNEL_NAMES_OUT
         ]
         return channels
 
-    # saves parameters into the Windows Registry
-    def save_settings(self):
-        self.state = self.param.saveState()
-        self.settings.setValue("State", self.state)
 
-    def print(self):
-        print("Settings")
-        pprint.pprint(self.setting_params)
-
-
-class ControlsParamTree(ParameterTree):
-    paramChange = QtCore.pyqtSignal(object, object)
+class ControlsParamTree(ParamTreeBase):
 
     def __init__(self):
-        super().__init__()
-
-        self.settings = QSettings("DAQ_Control", "Controls Param")
-
         self.control_params = [
             {
                 "name": "3D Alignment",
@@ -357,43 +318,9 @@ class ControlsParamTree(ParameterTree):
             },
         ]
 
-        self.param = Parameter.create(
-            name="control params", type="group", children=self.control_params
-        )
-        # self.param.addChild(parameterTypes.ListParameter())
-
-        if self.settings.value("State") != None:
-            self.state = self.settings.value("State")
-            # self.param.restoreState(self.state)
-        else:
-            print("No saved parameters, loading default")
-
-        self.setParameters(self.param, showTop=False)
-        # When the params change, send to method to emit.
-        self.param.sigTreeStateChanged.connect(self.send_change)
-
-    def send_change(self, param, changes):
-        self.paramChange.emit(param, changes)
-
-    # Convienience methods for modifying parameter values.
-    def get_param_value(self, branch, child):
-        """Get the current value of a parameter."""
-        return self.param.param(branch, child).value()
-
-    def set_param_value(self, branch, child, value):
-        """Set the current value of a parameter."""
-        return self.param.param(branch, child).setValue(value)
-
-    def save_settings(self):
-        self.state = self.param.saveState()
-        self.settings.setValue("State", self.state)
-
-    def print(self):
-        print("Controls")
-        pprint.pprint(self.control_params)
-
+        super().__init__(name="Controls Param", params=self.control_params)
 
 if __name__ == "__main__":
     print("\nRunning demo for ParameterTree\n")
-    param_tree = ChannelParamTree()
+    param_tree = ChannelParameters()
     param_tree.print()

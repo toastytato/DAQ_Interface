@@ -20,8 +20,9 @@ class SignalReader(QtCore.QThread):
 
         self.sample_rate = sample_rate
         self.sample_size = sample_size
-        self.input = np.empty(shape=(len(CHANNEL_NAMES), self.sample_size))
+        self.input = np.empty(shape=(len(CHANNEL_NAMES_IN), self.sample_size))
 
+    # called on start()
     def run(self):
         self.is_running = True
         print(self.input_channels)

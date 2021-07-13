@@ -5,7 +5,8 @@ from nidaqmx.stream_writers import AnalogMultiChannelWriter
 from pyqtgraph.Qt import QtCore
 
 # --- From DAQ Control --- #
-from config import *
+from config import CHANNEL_NAMES_OUT
+from misc_functions import WaveGenerator
 
 
 class RotationalFieldGenerator(QtCore.QObject):
@@ -14,7 +15,7 @@ class RotationalFieldGenerator(QtCore.QObject):
         self.writer = writer
         self._frequency = 0
         self._voltage = 0
-        self.num_channels = len(CHANNEL_NAMES)
+        self.num_channels = len(CHANNEL_NAMES_OUT)
 
     @property
     def frequency(self):
@@ -63,7 +64,7 @@ class SignalGeneratorBase(QtCore.QObject):
 
         self.is_running = False
 
-        self.num_channels = len(CHANNEL_NAMES)
+        self.num_channels = len(CHANNEL_NAMES_OUT)
         self.wave_gen = [WaveGenerator() for i in range(self.num_channels)]
 
         self.voltages = voltages
@@ -188,13 +189,13 @@ class SignalWriterDAQ(SignalGeneratorBase):
         self.callback()
 
     def callback(self):
-        # print("Writing wave to task {} at {} V, {} Hz".format(self.output_state, self.voltages, self.frequencies))
         super().callback()
         self.writer.write_many_sample(self.output_waveform)
 
     def resume(self):
-        self.callback() # extra callback to fill DAQ buffer
-        super().resume()
+        self.callback()     # extra callback to fill DAQ buffer
+        super().resume()    # start timer
+        self.task.start()   # start task
 
     def pause(self):
         super().pause()
@@ -203,82 +204,6 @@ class SignalWriterDAQ(SignalGeneratorBase):
     def end(self):
         super().end()
         self.task.close()
-
-
-# creates the sine wave to output
-class WaveGenerator:
-    def __init__(self):
-        self.reset = False
-        self.counter = 0
-        self.last_freq = 0
-        self.output_times = []
-
-    def reset_counter(self):
-        self.reset = True
-
-    def generate_wave(self, voltage, frequency, shift, sample_rate, samples_per_chunk):
-        """
-
-        :param voltage: RMS voltage, which will be converted to amplitude in signal
-        :param frequency: Determines if AC or DC. Frequency of signal in Hz if not 0, creates DC signal if frequency is 0
-        :param shift: The phase shift in degrees
-        :param sample_rate: # of data points per second
-        :param samples_per_chunk: # of data points that will be written in this output buffer
-        :return: np.array with waveform of input params
-
-        """
-
-        # return DC voltage if frequency is 0
-        if frequency == 0:
-            return np.full(shape=samples_per_chunk, fill_value=voltage)
-
-        # determine if it needs to shift frequency based on which part of the waveform it's on
-        if self.last_freq != frequency or self.reset:
-            self.reset = False
-            self.counter = 0
-            self.last_freq = frequency
-        else:
-            self.counter += 1
-
-        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
-        # waves_per_sec = frequency
-        rad_per_sec = 2 * np.pi * frequency
-        chunks_per_sec = sample_rate / samples_per_chunk
-        sec_per_chunk = 1 / chunks_per_sec
-        waves_per_chunk = frequency / chunks_per_sec
-
-        # phase shift based on parameter
-        phase_shift = 2 * np.pi * shift / 360
-
-        # shift the frequency if starting in the middle of a wave
-        start_fraction = waves_per_chunk % 1
-        freq_shifter = self.counter * 2 * np.pi * start_fraction
-
-        self.output_times = np.linspace(
-            start=0, stop=sec_per_chunk, num=samples_per_chunk
-        )
-        output_waveform = amplitude * np.sin(
-            self.output_times * rad_per_sec + freq_shifter - phase_shift
-        )
-
-        return output_waveform
-
-    # less used
-    def generate_n_periods(self, voltage, frequency, shift, sample_rate, num=1):
-        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
-
-        rad_per_sec = 2 * np.pi * frequency
-        samples_per_period = int(sample_rate / rad_per_sec)
-
-        phase_shift = 2 * np.pi * shift / 360
-
-        self.output_times = np.linspace(
-            start=0, stop=num / frequency, num=samples_per_period * num
-        )
-        output_waveform = amplitude * np.sin(
-            self.output_times * rad_per_sec - phase_shift
-        )
-        return output_waveform
 
 
 if __name__ == "__main__":

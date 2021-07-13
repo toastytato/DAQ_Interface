@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
 
         # Connect the output signal from changes in the param tree to change
         self.start_signal_btn.clicked.connect(self.start_signal_btn_click)
-        self.save_settings_btn.clicked.connect(self.save_settings_btn_click)
+        self.save_settings_btn.clicked.connect(self.commit_settings_btn_click)
         self.tabs.currentChanged.connect(self.on_tab_change)
         
         self.controls_param_tree.paramChange.connect(self.controls_param_change)
@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
 
         # initialize parameters database
         self.controls_param_tree = ControlsParamTree()
-        self.channel_param_tree = ChannelParamTree()
+        self.channel_param_tree = ChannelParameters()
         self.setting_param_tree = ConfigParamTree()
 
         title = QLabel("DAQ Controller")
@@ -78,12 +78,12 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.tabs)
 
     def init_daq_io(self):
-
         voltages = []
         frequencies = []
         shifts = []
         output_states = []
-        for ch in CHANNEL_NAMES:
+
+        for ch in CHANNEL_NAMES_OUT:
             branch = "Output " + ch
             voltages.append(
                 self.channel_param_tree.get_param_value(branch, "Voltage RMS")
@@ -100,9 +100,8 @@ class MainWindow(QMainWindow):
 
         self.legend.update_rms_params(
             sample_rate=self.setting_param_tree.get_param_value(
-                "Writer Config", "Sample Rate"
-            ),
-            frequencies=frequencies,
+                "Reader Config", "Sample Rate"
+            )
         )
 
         # When NI instrument is attached
@@ -180,7 +179,7 @@ class MainWindow(QMainWindow):
             self.start_signal_btn.setText("Press to pause signal")
 
     @pyqtSlot()
-    def save_settings_btn_click(self):
+    def commit_settings_btn_click(self):
         print("Commit settings btn pressed")
 
         writer_sample_rate = self.setting_param_tree.get_param_value(
@@ -197,15 +196,12 @@ class MainWindow(QMainWindow):
         )
         # update read channel names
         self.legend.update_channels(self.setting_param_tree.get_read_channels())
-
         self.legend.update_rms_params(sample_rate=writer_sample_rate)
 
         if not DEBUG_MODE:
             # TODO:
-            #   Create error dialog when same channels are inputted
-            #   Create error dialog when device name is wrong
-            #   Update writer settings
-            #   Fix sample size issue
+            #   Reader will probably not be able to update new sample settings
+            #   - need to not start and stop thread but restart task
 
             # close the current task and wait until it has fully ended
             self.read_thread.is_running = False
@@ -244,7 +240,7 @@ class MainWindow(QMainWindow):
             self.field_generator.resume_signal()
         elif t == 1:
             self.writer.realign_channel_phases()
-            for i, ch in enumerate(CHANNEL_NAMES):
+            for i, ch in enumerate(CHANNEL_NAMES_OUT):
                 parent = self.channel_param_tree.param.child("Output " + ch)
                 self.writer.output_state[i] = parent.child("Toggle Output").value()
                 self.writer.voltages[i] = parent.child("Voltage RMS").value()
@@ -278,7 +274,7 @@ class MainWindow(QMainWindow):
         for param, change, data in changes:
 
             path = self.channel_param_tree.param.childPath(param)
-            ch = CHANNEL_NAMES.index(path[0].split()[1])
+            ch = CHANNEL_NAMES_OUT.index(path[0].split()[1])
             print(ch)
             if path[1] == "Toggle Output":
                 self.writer.output_state[ch] = data
