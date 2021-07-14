@@ -1,3 +1,4 @@
+import time
 import nidaqmx
 import numpy as np
 from nidaqmx.constants import AcquisitionType
@@ -25,7 +26,7 @@ class SignalReader(QtCore.QThread):
     # called on start()
     def run(self):
         self.is_running = True
-        print(self.input_channels)
+        print("reader input channels:", self.input_channels)
         try:
             task = nidaqmx.Task("Reader Task")
         except OSError:
@@ -47,13 +48,14 @@ class SignalReader(QtCore.QThread):
 
         reader = AnalogMultiChannelReader(task.in_stream)
         task.start()
-
+        
         while self.is_running:
             try:
                 reader.read_many_sample(
                     data=self.input, number_of_samples_per_channel=self.sample_size
                 )
                 self.incoming_data.emit(self.input)
+                print("read_many_samples success")
 
             except Exception as e:
                 print("Error with read_many_sample")
@@ -66,7 +68,7 @@ class SignalReader(QtCore.QThread):
 if __name__ == "__main__":
     print("\nRunning demo for SignalReader\n")
 
-    # reader_thread = SignalReader(sample_rate=1000, sample_size=1000)
+    # reader_thread = SignalReader(sample_rate=1000, sample_size=1000, channels=[])
     # reader_thread.start()
     # input("Press return to stop")
     # reader_thread.is_running = False

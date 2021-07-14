@@ -137,13 +137,13 @@ class ConfigParamTree(ParamTreeBase):
                     {
                         "name": "Sample Rate",
                         "type": "int",
-                        "value": 1000,
+                        "value": 500,
                         "limits": (1, 10000),
                     },
                     {
                         "name": "Sample Size",
                         "type": "int",
-                        "Value": 1000,
+                        "value": 1000,
                         "limits": (1, 10000),
                     },
                 ],
