@@ -6,16 +6,40 @@ from pyqtgraph.Qt import QtCore
 
 # --- From DAQ Control --- #
 from config import CHANNEL_NAMES_OUT
-from misc_functions import WaveGenerator
+from misc_functions import *
 
 
-class RotationalFieldGenerator(QtCore.QObject):
-    def __init__(self, writer):
+class MagneticFieldControl(QtCore.QObject):
+    def __init__(self, writer, phi, theta, amplitude, frequency, kx=1, ky=1, kz=2):
         super().__init__()
         self.writer = writer
-        self._frequency = 0
-        self._voltage = 0
         self.num_channels = len(CHANNEL_NAMES_OUT)
+        self.mode = 0  # 0 = alignment, 1 = rotation
+
+        self.phi = 1
+        self.theta = 1
+        self.amplitude = 1
+        self.frequency = 1
+        self.kx = 1
+        self.ky = 1
+        self.kz = 1
+
+        self.voltages = [0, 0, 0]
+
+        if self.num_channels != 3:
+            raise ("Not enough write channels for 3D Magnetic Field Control!")
+
+    def update_magnetic_alignment(self):
+         # get voltages ( / sqrt(2) to convert to RMS)
+        self.voltages[0] = (
+            self.kx * self.amplitude * cos(self.phi) * cos(self.theta) / np.sqrt(2)
+        )
+        self.voltages[1] = (
+            self.ky * self.amplitude * cos(self.phi) * sin(self.theta) / np.sqrt(2)
+        )
+        self.voltages[2] = self.kz * self.amplitude * sin(self.phi) / np.sqrt(2)
+
+        self.writer.voltages = self.voltages
 
     @property
     def frequency(self):
@@ -25,24 +49,14 @@ class RotationalFieldGenerator(QtCore.QObject):
     def frequency(self, value):
         self._frequency = value
         for ch in range(self.num_channels):
-            self.writer.frequencies[ch] = self._frequency
-
-    @property
-    def voltage(self):
-        return self.voltage
-
-    @voltage.setter
-    def voltage(self, value):
-        self._voltage = value
-        for ch in range(self.num_channels):
-            self.writer.voltages[ch] = self._voltage
+            self.writer.frequencies[ch] = self.frequency 
 
     def resume_signal(self):
         for ch in range(self.num_channels):
             self.writer.output_state[ch] = True
-            self.writer.voltages[ch] = self._voltage
-            self.writer.frequencies[ch] = self._frequency
-            self.writer.shifts[ch] = (360 / self.num_channels) * ch
+            self.writer.voltages[ch] = self.voltages[ch]
+            self.writer.frequencies[ch] = self.frequency
+            self.writer.shifts[ch] = 0
 
     def pause_signal(self):
         for ch in range(self.num_channels):
@@ -71,7 +85,7 @@ class SignalGeneratorBase(QtCore.QObject):
         self.frequencies = frequencies
         self.shifts = shifts
         self.output_state = output_states
-        
+
         self.sample_rate = sample_rate  # resolution (signals/second)
         self.sample_size = sample_size  # buffer size sent on each callback
 
@@ -150,7 +164,7 @@ class SignalWriterDAQ(SignalGeneratorBase):
             sample_rate,
             sample_size,
         )
-        
+
         self.output_channels = channels
         self.daq_out_name = dev_name
 
@@ -193,9 +207,9 @@ class SignalWriterDAQ(SignalGeneratorBase):
         self.writer.write_many_sample(self.output_waveform)
 
     def resume(self):
-        self.callback()     # extra callback to fill DAQ buffer
-        super().resume()    # start timer
-        self.task.start()   # start task
+        self.callback()  # extra callback to fill DAQ buffer
+        super().resume()  # start timer
+        self.task.start()  # start task
 
     def pause(self):
         super().pause()

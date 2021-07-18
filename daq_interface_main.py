@@ -23,8 +23,8 @@ class MainWindow(QMainWindow):
         self.start_signal_btn.clicked.connect(self.start_signal_btn_click)
         self.save_settings_btn.clicked.connect(self.commit_settings_btn_click)
         self.tabs.currentChanged.connect(self.on_tab_change)
-        
-        self.controls_param_tree.paramChange.connect(self.controls_param_change)
+
+        self.magnetic_param_tree.paramChange.connect(self.magnetic_param_change)
         self.channel_param_tree.paramChange.connect(self.channels_param_change)
         self.setting_param_tree.paramChange.connect(self.settings_param_change)
 
@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         self.mainbox.setLayout(layout)
 
         # initialize parameters database
-        self.controls_param_tree = ControlsParamTree()
+        self.magnetic_param_tree = MagneticControlsParamTree()
         self.channel_param_tree = ChannelParameters()
         self.setting_param_tree = ConfigParamTree()
 
@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         self.settings_tab.setLayout(self.settings_tab.layout)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(self.controls_param_tree, "Main Controls")
+        self.tabs.addTab(self.magnetic_param_tree, "Magnetic Controls")
         self.tabs.addTab(self.channel_param_tree, "Channels Controls")
         self.tabs.addTab(self.settings_tab, "DAQ Settings")
         self.tabs.setCurrentIndex(1)
@@ -165,7 +165,26 @@ class MainWindow(QMainWindow):
             self.writer.new_data.connect(self.legend.on_new_data)
 
         # pass writer so field generator can manipulate it when it needs to
-        self.field_generator = RotationalFieldGenerator(self.writer)
+        self.field_generator = MagneticFieldControl(
+            writer=self.writer,
+            phi=self.magnetic_param_tree.get_param_value("3D Alignment", "Elevation"),
+            theta=self.magnetic_param_tree.get_param_value("3D Alignment", "Azimuth"),
+            amplitude=self.magnetic_param_tree.get_param_value(
+                "3D Alignment", "Amplitude"
+            ),
+            frequency=self.magnetic_param_tree.get_param_value(
+                "3D Alignment", "Frequency"
+            ),
+            kx=self.magnetic_param_tree.get_param_value(
+                "3D Alignment", "Coefficients", "kx"
+            ),
+            ky=self.magnetic_param_tree.get_param_value(
+                "3D Alignment", "Coefficients", "ky"
+            ),
+            kz=self.magnetic_param_tree.get_param_value(
+                "3D Alignment", "Coefficients", "kz"
+            ),
+        )
 
     @pyqtSlot()
     def start_signal_btn_click(self):
@@ -199,14 +218,6 @@ class MainWindow(QMainWindow):
         self.legend.update_rms_params(sample_rate=writer_sample_rate)
 
         if not DEBUG_MODE:
-            # TODO:
-            #   Reader will probably not be able to update new sample settings
-            #   - need to not start and stop thread but restart task
-
-            # close the current task and wait until it has fully ended
-            self.read_thread.is_running = False
-            self.read_thread.wait()
-
             # change the task parameters
             self.read_thread.input_channels = (
                 self.setting_param_tree.get_read_channels()
@@ -217,9 +228,8 @@ class MainWindow(QMainWindow):
             self.writer.sample_rate = writer_sample_rate
             self.writer.sample_size = writer_sample_size
 
-            # start the task again
-            self.read_thread.start()
             # restart writer to update refresh times
+            self.read_thread.restart()
             self.writer.pause()
             self.writer.resume()
 
@@ -241,7 +251,7 @@ class MainWindow(QMainWindow):
         elif t == 1:
             self.writer.realign_channel_phases()
             for i, ch in enumerate(CHANNEL_NAMES_OUT):
-                parent = self.channel_param_tree.param.child("Output " + ch)
+                parent = self.channel_param_tree.params.child("Output " + ch)
                 self.writer.output_state[i] = parent.child("Toggle Output").value()
                 self.writer.voltages[i] = parent.child("Voltage RMS").value()
                 self.writer.frequencies[i] = parent.child("Frequency").value()
@@ -249,31 +259,43 @@ class MainWindow(QMainWindow):
         elif t == 2:
             pass
 
-    def controls_param_change(self, parameter, changes):
+    def magnetic_param_change(self, parameter, changes):
         for param, change, data in changes:
 
-            path = self.controls_param_tree.param.childPath(param)
-
+            path = self.magnetic_param_tree.params.childPath(param)
+            print(path)
             if path[1] == "Toggle Output":
                 if data:
                     self.field_generator.resume_signal()
                 else:
                     self.field_generator.pause_signal()
             if path[1] == "Amplitude":
-                self.field_generator.voltage = data
-                print(self.writer.voltages)
+                self.field_generator.amplitude = data
+                self.field_generator.update_magnetic_alignment()
             if path[1] == "Frequency":
                 self.field_generator.frequency = data
-                print(self.writer.frequencies)
-            if path[1] == "Arrangement":
-                print(data)
+            if path[1] == "Elevation":
+                self.field_generator.phi = data
+                self.field_generator.update_magnetic_alignment()
+            if path[1] == "Azimuth":
+                self.field_generator.theta = data
+                self.field_generator.update_magnetic_alignment()
+            if path[1] == "Coefficients":
+                print(path[2])
+                if path[2] == "k" + CHANNEL_NAMES_OUT[0].lower():
+                    self.field_generator.kx = data
+                if path[2] == "k" + CHANNEL_NAMES_OUT[1].lower():
+                    self.field_generator.ky = data
+                if path[2] == "k" + CHANNEL_NAMES_OUT[2].lower():
+                    self.field_generator.kz = data
+                self.field_generator.update_magnetic_alignment()
 
     def channels_param_change(self, parameter, changes):
         # parameter: the GroupParameter object that holds the Channel Params
         # changes: list that contains [ParameterObject, 'value', data]
         for param, change, data in changes:
 
-            path = self.channel_param_tree.param.childPath(param)
+            path = self.channel_param_tree.params.childPath(param)
             ch = CHANNEL_NAMES_OUT.index(path[0].split()[1])
             print(ch)
             if path[1] == "Toggle Output":
@@ -302,7 +324,7 @@ class MainWindow(QMainWindow):
 
         self.channel_param_tree.save_settings()
         self.setting_param_tree.save_settings()
-        self.controls_param_tree.save_settings()
+        self.magnetic_param_tree.save_settings()
 
 
 if __name__ == "__main__":

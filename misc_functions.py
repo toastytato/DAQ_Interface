@@ -4,21 +4,23 @@ import numpy as np
 
 def three_dim_alignment(phi, theta, amplitude, kx, ky, kz):
     # peak to peak voltage
-    VX_PP = kx*amplitude*cos(phi)*cos(theta)
-    VY_PP = ky*amplitude*cos(phi)*sin(theta)
-    VZ_PP = kz*amplitude*sin(phi)
+    VX_PP = kx * amplitude * cos(phi) * cos(theta)
+    VY_PP = ky * amplitude * cos(phi) * sin(theta)
+    VZ_PP = kz * amplitude * sin(phi)
 
     return [VX_PP, VY_PP, VZ_PP]
+
 
 def three_dim_rotation(phi, theta, amplitude, kx, ky, kz):
     # peak to peak voltage
-    VX_PP = kx*amplitude*cos(phi)
-    VY_PP = ky*amplitude*cos(phi)
-    VZ_PP = kz*amplitude*sin(phi)
+    VX_PP = kx * amplitude * cos(phi)
+    VY_PP = ky * amplitude * cos(phi)
+    VZ_PP = kz * amplitude * sin(phi)
 
     return [VX_PP, VY_PP, VZ_PP]
 
 
+# calculates root mean square value of a given array
 def calculate_rms_value(data, sample_rate, frequency):
     # freq = cycles / sec
     # period = 1 / freq

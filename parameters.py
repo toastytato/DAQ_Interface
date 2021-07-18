@@ -6,6 +6,7 @@ from PyQt5.QtCore import QSettings
 
 from config import *
 
+
 class ParamTreeBase(ParameterTree):
     # ParamTree will output a signal that has the param and the output
     paramChange = QtCore.pyqtSignal(object, object)
@@ -16,46 +17,45 @@ class ParamTreeBase(ParameterTree):
         self.name = name
         self.settings = QSettings("DAQ_Control", self.name)
 
-        self.param = Parameter.create(
-            name=self.name, type="group", children=params
-        )
+        self.params = Parameter.create(name=self.name, type="group", children=params)
 
         if self.settings.value("State") != None and not RESET_DEFAULT_PARAMS:
             self.state = self.settings.value("State")
-            self.param.restoreState(self.state)
+            self.params.restoreState(self.state)
         else:
             print("Loading default params for", self.name)
 
-        self.setParameters(self.param, showTop=False)
+        self.setParameters(self.params, showTop=False)
         # When the params change, send to method to emit.
-        self.param.sigTreeStateChanged.connect(self.send_change)
+        self.params.sigTreeStateChanged.connect(self.send_change)
 
     def send_change(self, param, changes):
         self.paramChange.emit(param, changes)
 
     # Convienience methods for modifying parameter values.
-    def get_param_value(self, branch, child):
+    def get_param_value(self, *childs):
         """Get the current value of a parameter."""
-        return self.param.param(branch, child).value()
+        return self.params.param(*childs).value()
 
     def set_param_value(self, branch, child, value):
         """Set the current value of a parameter."""
-        return self.param.param(branch, child).setValue(value)
+        return self.params.param(branch, child).setValue(value)
 
     def step_param_value(self, child, delta, branch):
         """Change a parameter by a delta. Can be negative or positive."""
-        param = self.param.param(branch, child)
+        param = self.params.param(branch, child)
         curVal = param.value()
         newVal = curVal + delta
         return param.setValue(newVal)
 
     def save_settings(self):
-        self.state = self.param.saveState()
+        self.state = self.params.saveState()
         self.settings.setValue("State", self.state)
 
     def print(self):
         print(self.name)
-        print(self.param)
+        print(self.params)
+
 
 # data container for parameters controlling output and input on each channel
 class ChannelParameters(ParamTreeBase):
@@ -98,7 +98,8 @@ class ChannelParameters(ParamTreeBase):
             }
             self.channel_params.append(param)
 
-        super().__init__(name="Channel Params", params=self.channel_params)        
+        super().__init__(name="Channel Params", params=self.channel_params)
+
 
 # data container for parameters controlling settings saved in configurations tab
 class ConfigParamTree(ParamTreeBase):
@@ -184,8 +185,7 @@ class ConfigParamTree(ParamTreeBase):
         return channels
 
 
-class ControlsParamTree(ParamTreeBase):
-
+class MagneticControlsParamTree(ParamTreeBase):
     def __init__(self):
         self.control_params = [
             {
@@ -219,7 +219,7 @@ class ControlsParamTree(ParamTreeBase):
                         "suffix": "\N{DEGREE SIGN}",
                     },
                     {
-                        "name": "Z-phase",
+                        "name": "Azimuth",
                         "type": "float",
                         "value": 0,
                         "step": 0.1,
@@ -231,22 +231,22 @@ class ControlsParamTree(ParamTreeBase):
                         "expanded": False,
                         "children": [
                             {
-                                "name": "kx",
+                                "name": "k" + CHANNEL_NAMES_OUT[0].lower(),
                                 "type": "float",
                                 "value": 1,
-                                "step": 0.1,
+                                "step": 1,
                             },
                             {
-                                "name": "ky",
+                                "name": "k" + CHANNEL_NAMES_OUT[1].lower(),
                                 "type": "float",
                                 "value": 1,
-                                "step": 0.1,
+                                "step": 1,
                             },
                             {
-                                "name": "kz",
+                                "name": "k" + CHANNEL_NAMES_OUT[2].lower(),
                                 "type": "float",
                                 "value": 2,
-                                "step": 0.1,
+                                "step": 1,
                             },
                         ],
                     },
@@ -298,19 +298,19 @@ class ControlsParamTree(ParamTreeBase):
                                 "name": "kx",
                                 "type": "float",
                                 "value": 1,
-                                "step": 0.1,
+                                "step": 1,
                             },
                             {
                                 "name": "ky",
                                 "type": "float",
                                 "value": 1,
-                                "step": 0.1,
+                                "step": 1,
                             },
                             {
                                 "name": "kz",
                                 "type": "float",
                                 "value": 2,
-                                "step": 0.1,
+                                "step": 1,
                             },
                         ],
                     },
@@ -319,6 +319,7 @@ class ControlsParamTree(ParamTreeBase):
         ]
 
         super().__init__(name="Controls Param", params=self.control_params)
+
 
 if __name__ == "__main__":
     print("\nRunning demo for ParameterTree\n")

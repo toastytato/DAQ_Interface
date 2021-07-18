@@ -16,6 +16,7 @@ class SignalReader(QtCore.QThread):
 
         self.reader = None
         self.is_running = False
+        self.is_paused = False
         self.input_channels = channels
         self.daq_in_name = dev_name
 
@@ -26,9 +27,28 @@ class SignalReader(QtCore.QThread):
     # called on start()
     def run(self):
         self.is_running = True
+        self.create_task()
+
+        while self.is_running:
+            if not self.is_paused:
+                try:
+                    self.reader.read_many_sample(
+                        data=self.input, number_of_samples_per_channel=self.sample_size
+                    )
+                    self.incoming_data.emit(self.input)
+                    print("read_many_samples success")
+
+                except Exception as e:
+                    print("Error with read_many_sample")
+                    print(e)
+                    break
+
+        self.task.close()
+
+    def create_task(self):
         print("reader input channels:", self.input_channels)
         try:
-            task = nidaqmx.Task("Reader Task")
+            self.task = nidaqmx.Task("Reader Task")
         except OSError:
             print("DAQ is not connected, task could not be created")
             return
@@ -36,33 +56,24 @@ class SignalReader(QtCore.QThread):
         try:
             for ch in self.input_channels:
                 channel_name = self.daq_in_name + "/ai" + str(ch)
-                task.ai_channels.add_ai_voltage_chan(channel_name)
+                self.task.ai_channels.add_ai_voltage_chan(channel_name)
                 print(channel_name)
-        except Exception as e:
+        except Exception:
             print("DAQ is not connected, channel could not be added")
             return
 
-        task.timing.cfg_samp_clk_timing(
+        self.task.timing.cfg_samp_clk_timing(
             rate=self.sample_rate, sample_mode=AcquisitionType.CONTINUOUS
         )
+        self.task.start()
 
-        reader = AnalogMultiChannelReader(task.in_stream)
-        task.start()
-        
-        while self.is_running:
-            try:
-                reader.read_many_sample(
-                    data=self.input, number_of_samples_per_channel=self.sample_size
-                )
-                self.incoming_data.emit(self.input)
-                print("read_many_samples success")
+        self.reader = AnalogMultiChannelReader(self.task.in_stream)
 
-            except Exception as e:
-                print("Error with read_many_sample")
-                print(e)
-                break
-
-        task.close()
+    def restart(self):
+        self.is_paused = True
+        self.task.close()
+        self.create_task()
+        self.is_paused = False
 
 
 if __name__ == "__main__":
