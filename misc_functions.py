@@ -2,24 +2,6 @@ from math import cos, sin
 import numpy as np
 
 
-def three_dim_alignment(phi, theta, amplitude, kx, ky, kz):
-    # peak to peak voltage
-    VX_PP = kx * amplitude * cos(phi) * cos(theta)
-    VY_PP = ky * amplitude * cos(phi) * sin(theta)
-    VZ_PP = kz * amplitude * sin(phi)
-
-    return [VX_PP, VY_PP, VZ_PP]
-
-
-def three_dim_rotation(phi, theta, amplitude, kx, ky, kz):
-    # peak to peak voltage
-    VX_PP = kx * amplitude * cos(phi)
-    VY_PP = ky * amplitude * cos(phi)
-    VZ_PP = kz * amplitude * sin(phi)
-
-    return [VX_PP, VY_PP, VZ_PP]
-
-
 # calculates root mean square value of a given array
 def calculate_rms_value(data, sample_rate, frequency):
     # freq = cycles / sec
@@ -79,7 +61,7 @@ class WaveGenerator:
         else:
             self.counter += 1
 
-        amplitude = np.sqrt(2) * voltage  # get peak voltage from RMS voltage
+        amplitude = np.sqrt(2) * voltage  # get peak-peak voltage from RMS voltage
         # waves_per_sec = frequency
         rad_per_sec = 2 * np.pi * frequency
         chunks_per_sec = sample_rate / samples_per_chunk

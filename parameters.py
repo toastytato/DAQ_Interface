@@ -37,9 +37,9 @@ class ParamTreeBase(ParameterTree):
         """Get the current value of a parameter."""
         return self.params.param(*childs).value()
 
-    def set_param_value(self, branch, child, value):
+    def set_param_value(self, value, *childs):
         """Set the current value of a parameter."""
-        return self.params.param(branch, child).setValue(value)
+        return self.params.param(*childs).setValue(value)
 
     def step_param_value(self, child, delta, branch):
         """Change a parameter by a delta. Can be negative or positive."""
@@ -215,14 +215,14 @@ class MagneticControlsParamTree(ParamTreeBase):
                         "name": "Elevation",
                         "type": "float",
                         "value": 0,
-                        "step": 0.1,
+                        "step": 1,
                         "suffix": "\N{DEGREE SIGN}",
                     },
                     {
                         "name": "Azimuth",
                         "type": "float",
                         "value": 0,
-                        "step": 0.1,
+                        "step": 1,
                         "suffix": "\N{DEGREE SIGN}",
                     },
                     {
@@ -279,14 +279,14 @@ class MagneticControlsParamTree(ParamTreeBase):
                         "name": "Elevation",
                         "type": "float",
                         "value": 0,
-                        "step": 0.1,
+                        "step": 1,
                         "suffix": "\N{DEGREE SIGN}",
                     },
                     {
-                        "name": "Azimuth ",
+                        "name": "Azimuth",
                         "type": "float",
                         "value": 0,
-                        "step": 0.1,
+                        "step": 1,
                         "suffix": "\N{DEGREE SIGN}",
                     },
                     {

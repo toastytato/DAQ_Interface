@@ -12,4 +12,4 @@ MAX_VOLTAGE = 10
 MIN_VOLTAGE = -10
 
 # Reset to default param values (used when changes are made to param_tree code)
-RESET_DEFAULT_PARAMS = True
+RESET_DEFAULT_PARAMS = False

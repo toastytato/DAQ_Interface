@@ -9,37 +9,43 @@ from config import CHANNEL_NAMES_OUT
 from misc_functions import *
 
 
-class MagneticFieldControl(QtCore.QObject):
-    def __init__(self, writer, phi, theta, amplitude, frequency, kx=1, ky=1, kz=2):
+class MagneticControlBase(QtCore.QObject):
+    def __init__(
+        self, writer, state, phi, theta, amplitude, frequency, kx=1, ky=1, kz=2
+    ):
         super().__init__()
         self.writer = writer
         self.num_channels = len(CHANNEL_NAMES_OUT)
-        self.mode = 0  # 0 = alignment, 1 = rotation
 
-        self.phi = 1
-        self.theta = 1
-        self.amplitude = 1
-        self.frequency = 1
-        self.kx = 1
-        self.ky = 1
-        self.kz = 1
+        self.output_state = state
+        print(state)
+        self.phi = phi
+        self.theta = theta
+        self.amplitude = amplitude
+        self.frequency = frequency
+        self.kx = kx
+        self.ky = ky
+        self.kz = kz
 
         self.voltages = [0, 0, 0]
 
         if self.num_channels != 3:
-            raise ("Not enough write channels for 3D Magnetic Field Control!")
+            print("Not enough write channels for 3D Magnetic Field Control!")
 
-    def update_magnetic_alignment(self):
-         # get voltages ( / sqrt(2) to convert to RMS)
-        self.voltages[0] = (
-            self.kx * self.amplitude * cos(self.phi) * cos(self.theta) / np.sqrt(2)
-        )
-        self.voltages[1] = (
-            self.ky * self.amplitude * cos(self.phi) * sin(self.theta) / np.sqrt(2)
-        )
-        self.voltages[2] = self.kz * self.amplitude * sin(self.phi) / np.sqrt(2)
-
+    def update_params(self):
         self.writer.voltages = self.voltages
+        self.frequency = self._frequency
+
+    @property
+    def output_state(self):
+        return self._output_state
+
+    @output_state.setter
+    def output_state(self, value):
+        self._output_state = value
+        self.writer.output_state[0] = self.output_state
+        self.writer.output_state[1] = self.output_state
+        self.writer.output_state[2] = self.output_state
 
     @property
     def frequency(self):
@@ -49,18 +55,57 @@ class MagneticFieldControl(QtCore.QObject):
     def frequency(self, value):
         self._frequency = value
         for ch in range(self.num_channels):
-            self.writer.frequencies[ch] = self.frequency 
+            self.writer.frequencies[ch] = self.frequency
 
     def resume_signal(self):
         for ch in range(self.num_channels):
-            self.writer.output_state[ch] = True
-            self.writer.voltages[ch] = self.voltages[ch]
-            self.writer.frequencies[ch] = self.frequency
-            self.writer.shifts[ch] = 0
+            self.writer.output_state[ch] = self.output_state
 
     def pause_signal(self):
         for ch in range(self.num_channels):
             self.writer.output_state[ch] = False
+
+
+class MagneticAlignment(MagneticControlBase):
+    def __init__(self, writer, state, phi, theta, amplitude, frequency, kx, ky, kz):
+        super().__init__(
+            writer, state, phi, theta, amplitude, frequency, kx=kx, ky=ky, kz=kz
+        )
+
+    def update_params(self):
+        # get voltages ( / sqrt(2) to convert to RMS)
+        self.voltages[0] = (
+            self.kx * self.amplitude * cos(self.phi) * cos(self.theta) / np.sqrt(2)
+        )
+        self.voltages[1] = (
+            self.ky * self.amplitude * cos(self.phi) * sin(self.theta) / np.sqrt(2)
+        )
+        self.voltages[2] = self.kz * self.amplitude * sin(self.phi) / np.sqrt(2)
+
+        self.writer.shifts[0] = 0
+        self.writer.shifts[1] = 0
+        self.writer.shifts[2] = 0
+
+        super().update_params()
+
+
+class MagneticRotation(MagneticControlBase):
+    def __init__(self, writer, state, phi, theta, amplitude, frequency, kx, ky, kz):
+        super().__init__(
+            writer, state, phi, theta, amplitude, frequency, kx=kx, ky=ky, kz=kz
+        )
+
+    def update_params(self):
+        # get voltages ( / sqrt(2) to convert to RMS)
+        self.voltages[0] = self.kx * self.amplitude * cos(self.phi) / np.sqrt(2)
+        self.voltages[1] = self.ky * self.amplitude * cos(self.phi) / np.sqrt(2)
+        self.voltages[2] = self.kz * self.amplitude * sin(self.phi) / np.sqrt(2)
+
+        self.writer.shifts[0] = 0
+        self.writer.shifts[1] = self.writer.shifts[0] - 90
+        self.writer.shifts[2] = self.theta
+
+        super().update_params()
 
 
 class SignalGeneratorBase(QtCore.QObject):

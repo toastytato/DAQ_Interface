@@ -67,7 +67,8 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.magnetic_param_tree, "Magnetic Controls")
         self.tabs.addTab(self.channel_param_tree, "Channels Controls")
         self.tabs.addTab(self.settings_tab, "DAQ Settings")
-        self.tabs.setCurrentIndex(1)
+        self.current_tab = 0
+        self.tabs.setCurrentIndex(self.current_tab)
 
         # place widgets in their respective locations
         layout.addWidget(title)  # row, col, rowspan, colspan
@@ -164,9 +165,12 @@ class MainWindow(QMainWindow):
             self.writer.new_data.connect(self.plotter.update_plot)
             self.writer.new_data.connect(self.legend.on_new_data)
 
-        # pass writer so field generator can manipulate it when it needs to
-        self.field_generator = MagneticFieldControl(
+        # pass initialized writer so the magnetic manipulators can use it when it needs to
+        self.mag_alignment = MagneticAlignment(
             writer=self.writer,
+            state=self.magnetic_param_tree.get_param_value(
+                "3D Alignment", "Toggle Output"
+            ),
             phi=self.magnetic_param_tree.get_param_value("3D Alignment", "Elevation"),
             theta=self.magnetic_param_tree.get_param_value("3D Alignment", "Azimuth"),
             amplitude=self.magnetic_param_tree.get_param_value(
@@ -185,6 +189,29 @@ class MainWindow(QMainWindow):
                 "3D Alignment", "Coefficients", "kz"
             ),
         )
+        self.mag_rotation = MagneticRotation(
+            writer=self.writer,
+            state=self.magnetic_param_tree.get_param_value(
+                "3D Rotation", "Toggle Output"
+            ),
+            phi=self.magnetic_param_tree.get_param_value("3D Rotation", "Elevation"),
+            theta=self.magnetic_param_tree.get_param_value("3D Rotation", "Azimuth"),
+            amplitude=self.magnetic_param_tree.get_param_value(
+                "3D Rotation", "Amplitude"
+            ),
+            frequency=self.magnetic_param_tree.get_param_value(
+                "3D Rotation", "Frequency"
+            ),
+            kx=self.magnetic_param_tree.get_param_value(
+                "3D Rotation", "Coefficients", "kx"
+            ),
+            ky=self.magnetic_param_tree.get_param_value(
+                "3D Rotation", "Coefficients", "ky"
+            ),
+            kz=self.magnetic_param_tree.get_param_value(
+                "3D Rotation", "Coefficients", "kz"
+            ),
+        )
 
     @pyqtSlot()
     def start_signal_btn_click(self):
@@ -194,7 +221,16 @@ class MainWindow(QMainWindow):
             self.start_signal_btn.setText("Press to resume signal")
         else:
             print("Started DAQ signal")
-            self.writer.resume()
+            if self.current_tab == 0:
+                self.writer.realign_channel_phases()
+                if self.mag_alignment.output_state:
+                    self.mag_alignment.update_params()
+                elif self.mag_rotation.output_state:
+                    self.mag_rotation.update_params()
+                self.writer.resume()
+            if self.current_tab == 1:
+                self.writer.resume()
+
             self.start_signal_btn.setText("Press to pause signal")
 
     @pyqtSlot()
@@ -244,10 +280,13 @@ class MainWindow(QMainWindow):
     @pyqtSlot(int)
     def on_tab_change(self, t):
         print("changed to tab: ", t)
-
+        self.current_tab = t
         if t == 0:
             self.writer.realign_channel_phases()
-            self.field_generator.resume_signal()
+            if self.mag_alignment.output_state:
+                self.mag_alignment.update_params()
+            if self.mag_rotation.output_state:
+                self.mag_rotation.update_params()
         elif t == 1:
             self.writer.realign_channel_phases()
             for i, ch in enumerate(CHANNEL_NAMES_OUT):
@@ -264,31 +303,63 @@ class MainWindow(QMainWindow):
 
             path = self.magnetic_param_tree.params.childPath(param)
             print(path)
-            if path[1] == "Toggle Output":
-                if data:
-                    self.field_generator.resume_signal()
-                else:
-                    self.field_generator.pause_signal()
-            if path[1] == "Amplitude":
-                self.field_generator.amplitude = data
-                self.field_generator.update_magnetic_alignment()
-            if path[1] == "Frequency":
-                self.field_generator.frequency = data
-            if path[1] == "Elevation":
-                self.field_generator.phi = data
-                self.field_generator.update_magnetic_alignment()
-            if path[1] == "Azimuth":
-                self.field_generator.theta = data
-                self.field_generator.update_magnetic_alignment()
-            if path[1] == "Coefficients":
-                print(path[2])
-                if path[2] == "k" + CHANNEL_NAMES_OUT[0].lower():
-                    self.field_generator.kx = data
-                if path[2] == "k" + CHANNEL_NAMES_OUT[1].lower():
-                    self.field_generator.ky = data
-                if path[2] == "k" + CHANNEL_NAMES_OUT[2].lower():
-                    self.field_generator.kz = data
-                self.field_generator.update_magnetic_alignment()
+            if path[0] == "3D Alignment":
+                if path[1] == "Toggle Output":
+                    if data:
+                        self.mag_alignment.update_params()
+                        self.magnetic_param_tree.set_param_value(
+                            False, "3D Rotation", "Toggle Output"
+                        )
+                    self.mag_alignment.output_state = data
+                elif path[1] == "Amplitude":
+                    self.mag_alignment.amplitude = data
+                    self.mag_alignment.update_params()
+                elif path[1] == "Frequency":
+                    self.mag_alignment.frequency = data
+                elif path[1] == "Elevation":
+                    self.mag_alignment.phi = data
+                    self.mag_alignment.update_params()
+                elif path[1] == "Azimuth":
+                    self.mag_alignment.theta = data
+                    self.mag_alignment.update_params()
+                elif path[1] == "Coefficients":
+                    print(path[2])
+                    if path[2] == "k" + CHANNEL_NAMES_OUT[0].lower():
+                        self.mag_alignment.kx = data
+                    if path[2] == "k" + CHANNEL_NAMES_OUT[1].lower():
+                        self.mag_alignment.ky = data
+                    if path[2] == "k" + CHANNEL_NAMES_OUT[2].lower():
+                        self.mag_alignment.kz = data
+                    self.mag_alignment.update_params()
+
+            elif path[0] == "3D Rotation":
+                if path[1] == "Toggle Output":
+                    if data:
+                        self.mag_rotation.update_params()
+                        self.magnetic_param_tree.set_param_value(
+                            False, "3D Alignment", "Toggle Output"
+                        )
+                    self.mag_rotation.output_state = data
+                elif path[1] == "Amplitude":
+                    self.mag_rotation.amplitude = data
+                    self.mag_rotation.update_params()
+                elif path[1] == "Frequency":
+                    self.mag_rotation.frequency = data
+                elif path[1] == "Elevation":
+                    self.mag_rotation.phi = data
+                    self.mag_rotation.update_params()
+                elif path[1] == "Azimuth":
+                    self.mag_rotation.theta = data
+                    self.mag_rotation.update_params()
+                elif path[1] == "Coefficients":
+                    print(path[2])
+                    if path[2] == "k" + CHANNEL_NAMES_OUT[0].lower():
+                        self.mag_rotation.kx = data
+                    if path[2] == "k" + CHANNEL_NAMES_OUT[1].lower():
+                        self.mag_rotation.ky = data
+                    if path[2] == "k" + CHANNEL_NAMES_OUT[2].lower():
+                        self.mag_rotation.kz = data
+                    self.mag_rotation.update_params()
 
     def channels_param_change(self, parameter, changes):
         # parameter: the GroupParameter object that holds the Channel Params
