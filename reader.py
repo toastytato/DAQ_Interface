@@ -24,6 +24,7 @@ class SignalReader(QtCore.QThread):
         self.sample_size = sample_size
         self.input = np.empty(shape=(len(CHANNEL_NAMES_IN), self.sample_size))
 
+
     # called on start()
     def run(self):
         self.is_running = True
@@ -36,7 +37,6 @@ class SignalReader(QtCore.QThread):
                         data=self.input, number_of_samples_per_channel=self.sample_size
                     )
                     self.incoming_data.emit(self.input)
-                    print("read_many_samples success")
 
                 except Exception as e:
                     print("Error with read_many_sample")
@@ -74,7 +74,6 @@ class SignalReader(QtCore.QThread):
         self.task.close()
         self.create_task()
         self.is_paused = False
-
 
 if __name__ == "__main__":
     print("\nRunning demo for SignalReader\n")

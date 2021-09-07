@@ -43,9 +43,9 @@ class MagneticControlBase(QtCore.QObject):
     @output_state.setter
     def output_state(self, value):
         self._output_state = value
-        self.writer.output_state[0] = self.output_state
-        self.writer.output_state[1] = self.output_state
-        self.writer.output_state[2] = self.output_state
+        self.writer.output_states[0] = self.output_state
+        self.writer.output_states[1] = self.output_state
+        self.writer.output_states[2] = self.output_state
 
     @property
     def frequency(self):
@@ -114,7 +114,7 @@ class SignalGeneratorBase(QtCore.QObject):
     without initializing NI method that can raise errors
     """
 
-    new_data = QtCore.pyqtSignal(object)
+    incoming_data = QtCore.pyqtSignal(object)
 
     def __init__(
         self, voltages, frequencies, shifts, output_states, sample_rate, sample_size
@@ -129,7 +129,7 @@ class SignalGeneratorBase(QtCore.QObject):
         self.voltages = voltages
         self.frequencies = frequencies
         self.shifts = shifts
-        self.output_state = output_states
+        self.output_states = output_states
 
         self.sample_rate = sample_rate  # resolution (signals/second)
         self.sample_size = sample_size  # buffer size sent on each callback
@@ -153,10 +153,13 @@ class SignalGeneratorBase(QtCore.QObject):
         for i in range(self.num_channels):
             self.wave_gen[i].reset_counter()
 
+    def on_offsets_received(self, data):
+        self.offsets = data
+
     # callback for the Debug sig_gen to create signal and send to data reader
     def callback(self):
         for i in range(self.num_channels):
-            if self.output_state[i]:
+            if self.output_states[i]:
                 self.output_waveform[i] = self.wave_gen[i].generate_wave(
                     self.voltages[i],
                     self.frequencies[i],
@@ -167,12 +170,12 @@ class SignalGeneratorBase(QtCore.QObject):
             else:
                 self.output_waveform[i] = np.zeros(self.sample_size)
 
-        self.new_data.emit(self.output_waveform)
+        self.incoming_data.emit(self.output_waveform)
 
     def resume(self):
         print("Signal resumed")
         self.is_running = True
-        self.output_state = [True for x in range(self.num_channels)]
+        self.output_states = [True for x in range(self.num_channels)]
         self.signal_time = 1000 * (self.sample_size / self.sample_rate)
         self.callback()
         self.timer.start(self.signal_time)
@@ -180,7 +183,7 @@ class SignalGeneratorBase(QtCore.QObject):
     def pause(self):
         print("Signal paused")
         self.is_running = False
-        self.output_state = [False for x in range(self.num_channels)]
+        self.output_states = [False for x in range(self.num_channels)]
         self.callback()
         self.timer.stop()
 

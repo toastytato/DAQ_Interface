@@ -1,4 +1,6 @@
-# Constants for main
+# Global contants
+
+# True if no NI-DAQ Hardware is attached. Data will be simulated
 DEBUG_MODE = True
 
 # Sets the number of concurrent output/input channels as well as their names
@@ -12,4 +14,4 @@ MAX_VOLTAGE = 10
 MIN_VOLTAGE = -10
 
 # Reset to default param values (used when changes are made to param_tree code)
-RESET_DEFAULT_PARAMS = False
+RESET_DEFAULT_PARAMS = True

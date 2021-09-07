@@ -138,7 +138,7 @@ class ConfigParamTree(ParamTreeBase):
                     {
                         "name": "Sample Rate",
                         "type": "int",
-                        "value": 500,
+                        "value": 1000,
                         "limits": (1, 10000),
                     },
                     {
@@ -147,11 +147,17 @@ class ConfigParamTree(ParamTreeBase):
                         "value": 1000,
                         "limits": (1, 10000),
                     },
+                    {
+                        "name": "Calibration Offsets",
+                        "type": "group",
+                        "children": []
+                    }
                 ],
             },
         ]
         # add in the different channels dynamically
         for i, ch in enumerate(CHANNEL_NAMES_OUT):
+            # Writer Config
             self.setting_params[0]["children"].append(
                 {
                     "name": ch + " Output Channel",
@@ -160,6 +166,7 @@ class ConfigParamTree(ParamTreeBase):
                 }
             )
         for i, ch in enumerate(CHANNEL_NAMES_IN):
+            # Reader Config
             self.setting_params[1]["children"].append(
                 {
                     "name": ch + " Input Channel",

@@ -1,5 +1,6 @@
 import sys
 
+from PyQt5 import QtGui
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
@@ -8,17 +9,42 @@ from reader import *
 from writer import *
 from parameters import *
 from plotter import *
+from calibration import *
 
 
-# TODO:
-
-
-class MainWindow(QMainWindow):
+class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super().__init__()
+
+        # initialize parameters database
+        self.magnetic_param_tree = MagneticControlsParamTree()
+        self.channel_param_tree = ChannelParameters()
+        self.setting_param_tree = ConfigParamTree()
+
         self.init_ui()
         self.init_daq_io()
+        
+        if DEBUG_MODE:
+            self.calibration_dialog = CalibrationWindow(
+                parent=self,
+                writer=self.writer,
+                reader=self.writer,
+                )
+            self.writer.incoming_data.connect(self.calibration_dialog.apply_calibration)
+           
+        else:
+            self.calibration_dialog = CalibrationWindow(
+                parent=self,
+                writer=self.writer,
+                reader=self.read_thread,  
+            )
+            self.read_thread.incoming_data.connect(self.calibration_dialog.apply_calibration)
 
+        self.calibration_dialog.corrected_data.connect(self.plotter.update_plot)
+        self.calibration_dialog.corrected_data.connect(self.legend.on_new_data)
+
+        self.calibration_dialog.show()
+        
         # Connect the output signal from changes in the param tree to change
         self.start_signal_btn.clicked.connect(self.start_signal_btn_click)
         self.save_settings_btn.clicked.connect(self.commit_settings_btn_click)
@@ -39,16 +65,12 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         self.mainbox.setLayout(layout)
 
-        # initialize parameters database
-        self.magnetic_param_tree = MagneticControlsParamTree()
-        self.channel_param_tree = ChannelParameters()
-        self.setting_param_tree = ConfigParamTree()
-
         title = QLabel("DAQ Controller")
         title.setAlignment(Qt.AlignHCenter)
         self.legend = Legend(self.setting_param_tree.get_read_channels())
 
         # TODO: update legend frequency on startup with param tree values
+        #   use signals instead of passing in legend might be better
         self.plotter = SignalPlot(self.legend)
         # self.plotter.setMaximumSize(800, 360)
 
@@ -56,14 +78,14 @@ class MainWindow(QMainWindow):
 
         # self.channel_param_tree.setMinimumSize(100, 200)
 
-        self.settings_tab = QWidget()
+        self.settings_tab = QWidget(self)
         self.settings_tab.layout = QVBoxLayout(self)
         self.save_settings_btn = QPushButton("Commit Settings")
         self.settings_tab.layout.addWidget(self.setting_param_tree)
         self.settings_tab.layout.addWidget(self.save_settings_btn)
         self.settings_tab.setLayout(self.settings_tab.layout)
 
-        self.tabs = QTabWidget()
+        self.tabs = QTabWidget(self)
         self.tabs.addTab(self.magnetic_param_tree, "Magnetic Controls")
         self.tabs.addTab(self.channel_param_tree, "Channels Controls")
         self.tabs.addTab(self.settings_tab, "DAQ Settings")
@@ -120,8 +142,6 @@ class MainWindow(QMainWindow):
                     "Reader Config", "Device Name"
                 ),
             )
-            self.read_thread.incoming_data.connect(self.plotter.update_plot)
-            self.read_thread.incoming_data.connect(self.legend.on_new_data)
             self.read_thread.start()
 
             # initiate writer for analog output
@@ -162,8 +182,6 @@ class MainWindow(QMainWindow):
                     "Writer Config", "Sample Size"
                 ),
             )
-            self.writer.new_data.connect(self.plotter.update_plot)
-            self.writer.new_data.connect(self.legend.on_new_data)
 
         # pass initialized writer so the magnetic manipulators can use it when it needs to
         self.mag_alignment = MagneticAlignment(
@@ -291,7 +309,7 @@ class MainWindow(QMainWindow):
             self.writer.realign_channel_phases()
             for i, ch in enumerate(CHANNEL_NAMES_OUT):
                 parent = self.channel_param_tree.params.child("Output " + ch)
-                self.writer.output_state[i] = parent.child("Toggle Output").value()
+                self.writer.output_states[i] = parent.child("Toggle Output").value()
                 self.writer.voltages[i] = parent.child("Voltage RMS").value()
                 self.writer.frequencies[i] = parent.child("Frequency").value()
                 self.writer.shifts[i] = parent.child("Phase Shift").value()
@@ -370,7 +388,7 @@ class MainWindow(QMainWindow):
             ch = CHANNEL_NAMES_OUT.index(path[0].split()[1])
             print(ch)
             if path[1] == "Toggle Output":
-                self.writer.output_state[ch] = data
+                self.writer.output_states[ch] = data
             if path[1] == "Voltage RMS":
                 self.writer.voltages[ch] = data
             if path[1] == "Frequency":

@@ -28,9 +28,14 @@ class SignalPlot(pg.PlotWidget):
 
         self.setLabel("left", "Voltage", units="V")
         self.setLabel("bottom", "Samples")
+    
+    def on_offsets_received(self, data):
+        self.offsets = data
 
     def update_plot(self, incoming_data):
         self.clear()
+
+        # adds each channel's offset to incoming channel
         for i, data in enumerate(incoming_data):
             # this is kinda ugly but it works so let's roll with it
             if self.legend.legend_items[i].toggle_box.isChecked():
