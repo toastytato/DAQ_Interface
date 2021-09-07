@@ -114,6 +114,7 @@ class SignalGeneratorBase(QtCore.QObject):
     without initializing NI method that can raise errors
     """
 
+    # uses generated waveform as simulated input data
     incoming_data = QtCore.pyqtSignal(object)
 
     def __init__(

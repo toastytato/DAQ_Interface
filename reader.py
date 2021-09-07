@@ -22,6 +22,7 @@ class SignalReader(QtCore.QThread):
 
         self.sample_rate = sample_rate
         self.sample_size = sample_size
+        # actual data received from the DAQ
         self.input = np.empty(shape=(len(CHANNEL_NAMES_IN), self.sample_size))
 
 
