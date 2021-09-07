@@ -40,7 +40,6 @@ class CalibrationWindow(QtGui.QMainWindow):
         self.offsets = [0 for x in CHANNEL_NAMES_IN]
 
         self.init_ui()
-        self.reader.incoming_data.connect(self.on_data_collected)
         self.calibration_btn.clicked.connect(self.on_calibration_btn_clicked)
 
     def init_ui(self):
@@ -93,6 +92,7 @@ class CalibrationWindow(QtGui.QMainWindow):
 
     def run_calibration(self):
         # connect to reader to get input
+        self.reader.incoming_data.connect(self.on_data_collected)
 
         self.saved_writer_states = self.writer.output_states
         self.saved_writer_frequencies = self.writer.frequencies
