@@ -39,9 +39,6 @@ class CalibrationWindow(QtGui.QMainWindow):
         self.calibration_voltage = 0
         self.offsets = [0 for x in CHANNEL_NAMES_OUT]
 
-        # testing calibration 
-        self.reader.incoming_data.connect(self.on_data_collected)
-
         self.init_ui()
         self.calibration_btn.clicked.connect(self.on_calibration_btn_clicked)
 
@@ -65,6 +62,7 @@ class CalibrationWindow(QtGui.QMainWindow):
 
     def on_calibration_btn_clicked(self):
         if self.calibration_state:
+            
             self.run_calibration()
         else:
             self.close()
@@ -76,13 +74,14 @@ class CalibrationWindow(QtGui.QMainWindow):
             self.offsets[i] = self.calibration_voltage - np.mean(data[i])
         
         print("Offset:", self.offsets)
-
         self.halt_flag = False
         self.calibration_btn.setText("Finish Calibration")
         self.calibration_state = False
 
     def run_calibration(self):
-        # set params
+        # connect to reader to get input
+        self.reader.incoming_data.connect(self.on_data_collected)
+
         saved_writer_states = self.writer.output_states
         saved_writer_frequencies = self.writer.frequencies
         saved_writer_voltages = self.writer.voltages
@@ -95,7 +94,7 @@ class CalibrationWindow(QtGui.QMainWindow):
             self.writer.voltages[i] = self.calibration_voltage
             self.writer.frequencies[i] = 0
         
-        self.writer.resume()
+        self.writer.resume()        
         # wait until calibration receives data on input
         while(self.halt_flag):
             print("waiting")
@@ -113,5 +112,5 @@ class CalibrationWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         # prevent on_data_collected from being called once calibration is done
-        self.writer.incoming_data.disconnect(self.on_data_collected)
+        self.reader.incoming_data.disconnect(self.on_data_collected)
         print("Exited Calibration")

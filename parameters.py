@@ -19,6 +19,7 @@ class ParamTreeBase(ParameterTree):
 
         self.params = Parameter.create(name=self.name, type="group", children=params)
 
+        # load saved data when available or otherwise specified in config.py
         if self.settings.value("State") != None and not RESET_DEFAULT_PARAMS:
             self.state = self.settings.value("State")
             self.params.restoreState(self.state)
@@ -147,11 +148,6 @@ class ConfigParamTree(ParamTreeBase):
                         "value": 1000,
                         "limits": (1, 10000),
                     },
-                    {
-                        "name": "Calibration Offsets",
-                        "type": "group",
-                        "children": []
-                    }
                 ],
             },
         ]
@@ -174,6 +170,15 @@ class ConfigParamTree(ParamTreeBase):
                     "value": i,
                 }
             )
+        self.setting_params[1]["children"].append(
+            {
+                "name": "Calibration Offsets",
+                "type": "group",
+                "children": [
+
+                ]
+            }
+        )
 
         super().__init__(name="Config Param", params=self.setting_params)
 
