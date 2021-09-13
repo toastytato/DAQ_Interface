@@ -152,8 +152,8 @@ class ConfigParamTree(ParamTreeBase):
             },
         ]
         # add in the different channels dynamically
+        # Writer Config
         for i, ch in enumerate(CHANNEL_NAMES_OUT):
-            # Writer Config
             self.setting_params[0]["children"].append(
                 {
                     "name": ch + " Output Channel",
@@ -161,8 +161,9 @@ class ConfigParamTree(ParamTreeBase):
                     "value": i,
                 }
             )
+        # Reader Config
         for i, ch in enumerate(CHANNEL_NAMES_IN):
-            # Reader Config
+
             self.setting_params[1]["children"].append(
                 {
                     "name": ch + " Input Channel",
@@ -170,12 +171,18 @@ class ConfigParamTree(ParamTreeBase):
                     "value": i,
                 }
             )
+        # Reader calibration offsets
         self.setting_params[1]["children"].append(
             {
                 "name": "Calibration Offsets",
                 "type": "group",
                 "children": [
-
+                    {
+                        "name": ch,
+                        "type": "float",
+                        "value": 0
+                    }
+                    for ch in CHANNEL_NAMES_IN
                 ]
             }
         )
@@ -195,6 +202,11 @@ class ConfigParamTree(ParamTreeBase):
             for ch in CHANNEL_NAMES_OUT
         ]
         return channels
+
+    def save_offsets(self, offsets):
+        for i, ch in enumerate(CHANNEL_NAMES_IN):
+            self.set_param_value(offsets[i], "Reader Config", "Calibration Offsets", ch)
+        print("Saving offsets")
 
 
 class MagneticControlsParamTree(ParamTreeBase):

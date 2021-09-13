@@ -9,9 +9,12 @@ DEBUG_MODE = True
 CHANNEL_NAMES_OUT = ["X", "Y", "Z"]
 CHANNEL_NAMES_IN = ["X1", "X2", "Y1"]
 
+# Voltage set in DAQ output to compare against when calibrating
+CALIBRATION_VOLTAGE = 0
+
 # Voltage Limits on output DAQ
 MAX_VOLTAGE = 10
 MIN_VOLTAGE = -10
 
 # Reset to default param values (used when changes are made to param_tree code)
-RESET_DEFAULT_PARAMS = True
+RESET_DEFAULT_PARAMS = False

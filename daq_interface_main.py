@@ -23,32 +23,44 @@ class MainWindow(QtGui.QMainWindow):
 
         self.init_ui()
         self.init_daq_io()
-        
+
+        saved_offsets = [
+            self.setting_param_tree.get_param_value(
+                "Reader Config", "Calibration Offsets", ch
+            )
+            for ch in CHANNEL_NAMES_IN
+        ]
         if DEBUG_MODE:
             self.calibration_dialog = CalibrationWindow(
                 parent=self,
                 writer=self.writer,
                 reader=self.writer,
                 write_channels=self.setting_param_tree.get_write_channels(),
-                read_channels=self.setting_param_tree.get_write_channels()
-                )
+                read_channels=self.setting_param_tree.get_write_channels(),
+                saved_offsets=saved_offsets,
+            )
             self.writer.incoming_data.connect(self.calibration_dialog.apply_calibration)
         # DAQ connected mode
         else:
             self.calibration_dialog = CalibrationWindow(
                 parent=self,
                 writer=self.writer,
-                reader=self.read_thread,  
+                reader=self.read_thread,
                 write_channels=self.setting_param_tree.get_write_channels(),
-                read_channels=self.setting_param_tree.get_read_channels()
+                read_channels=self.setting_param_tree.get_read_channels(),
+                saved_offsets=saved_offsets,
             )
-            self.read_thread.incoming_data.connect(self.calibration_dialog.apply_calibration)
+            self.read_thread.incoming_data.connect(
+                self.calibration_dialog.apply_calibration
+            )
 
         self.calibration_dialog.corrected_data.connect(self.plotter.update_plot)
         self.calibration_dialog.corrected_data.connect(self.legend.on_new_data)
-
+        self.calibration_dialog.offsets_received.connect(
+            self.setting_param_tree.save_offsets
+        )
         self.calibration_dialog.show()
-        
+
         # Connect the output signal from changes in the param tree to change
         self.start_signal_btn.clicked.connect(self.start_signal_btn_click)
         self.save_settings_btn.clicked.connect(self.commit_settings_btn_click)
