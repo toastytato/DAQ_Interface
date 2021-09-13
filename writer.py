@@ -132,6 +132,7 @@ class SignalGeneratorBase(QtCore.QObject):
         self.shifts = shifts
         self.output_states = output_states
 
+        # TODO: change ability to dynamically change sample rate/size in UI settings
         self.sample_rate = sample_rate  # resolution (signals/second)
         self.sample_size = sample_size  # buffer size sent on each callback
 
@@ -171,6 +172,7 @@ class SignalGeneratorBase(QtCore.QObject):
             else:
                 self.output_waveform[i] = np.zeros(self.sample_size)
 
+        # use as debug simulated input signal
         self.incoming_data.emit(self.output_waveform)
 
     def resume(self):
@@ -260,6 +262,7 @@ class SignalWriterDAQ(SignalGeneratorBase):
         super().resume()  # start timer
         self.task.start()  # start task
 
+    # TODO: bug with this not setting output to 0 when DAQ is hooked up
     def pause(self):
         super().pause()
         self.task.stop()

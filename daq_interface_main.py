@@ -29,14 +29,18 @@ class MainWindow(QtGui.QMainWindow):
                 parent=self,
                 writer=self.writer,
                 reader=self.writer,
+                write_channels=self.setting_param_tree.get_write_channels(),
+                read_channels=self.setting_param_tree.get_write_channels()
                 )
             self.writer.incoming_data.connect(self.calibration_dialog.apply_calibration)
-           
+        # DAQ connected mode
         else:
             self.calibration_dialog = CalibrationWindow(
                 parent=self,
                 writer=self.writer,
                 reader=self.read_thread,  
+                write_channels=self.setting_param_tree.get_write_channels(),
+                read_channels=self.setting_param_tree.get_read_channels()
             )
             self.read_thread.incoming_data.connect(self.calibration_dialog.apply_calibration)
 
