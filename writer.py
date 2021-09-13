@@ -187,6 +187,8 @@ class SignalGeneratorBase(QtCore.QObject):
         print("Signal paused")
         self.is_running = False
         self.output_states = [False for x in range(self.num_channels)]
+        # clear the buffer with new data
+        self.callback()
         self.callback()
         self.timer.stop()
 

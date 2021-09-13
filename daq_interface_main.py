@@ -3,7 +3,6 @@ import sys
 from PyQt5 import QtGui
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-
 # --- From DAQ Control --- #
 from reader import *
 from writer import *
@@ -332,6 +331,8 @@ class MainWindow(QtGui.QMainWindow):
         elif t == 2:
             pass
 
+    # TODO: 3D alignment will be changed to 3D Rotation when 
+    #       3D rotation param is changed, and vice versa
     def magnetic_param_change(self, parameter, changes):
         for param, change, data in changes:
 

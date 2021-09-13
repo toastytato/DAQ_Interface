@@ -29,7 +29,8 @@ Hook up back onto coils
 -Save and finish
 """
 
-
+# TODO: if previous session has a sin wave, calibration will end up using that sin wave instead of
+#       the calibration voltage
 class CalibrationWindow(QtGui.QMainWindow):
     """
     Calibrates the DAQ reader to ensure the correct offset for all channels
@@ -50,12 +51,9 @@ class CalibrationWindow(QtGui.QMainWindow):
 
         self.calibration_state = True
         self.calibration_voltage = CALIBRATION_VOLTAGE
-        print("Saved", saved_offsets)
-
-        if saved_offsets is None:
-            self.offsets = [0 for x in CHANNEL_NAMES_IN]
-        else:
-            self.offsets = saved_offsets
+        
+        self.handler_counter = 0
+        self.offsets = saved_offsets
         # value represents the index of the output channel to take voltage readings from
         self.assigned_output = [int for x in CHANNEL_NAMES_OUT]
 
@@ -110,7 +108,6 @@ class CalibrationWindow(QtGui.QMainWindow):
         instructions += "\noutput DAQ channels before starting calibration\n"
         instructions += "\n(Exit to skip calibration)\n"
 
-
         layout.addWidget(self.calibration_voltage_label)
         layout.addLayout(grid_layout)
         layout.addWidget(QLabel(instructions))
@@ -131,6 +128,12 @@ class CalibrationWindow(QtGui.QMainWindow):
 
     # handler that is called when reader takes in a buffer
     def on_data_collected(self, data):
+        self.handler_counter += 1
+        # allow the DAQ to clear its buffer before taking in voltage
+        if self.handler_counter < 2:
+            return
+
+        self.handler_counter = 0
         print("Calibration data received")
         # collect mean of data in buffer, and apply offset to plotter
         for i, ch in enumerate(CHANNEL_NAMES_IN):
