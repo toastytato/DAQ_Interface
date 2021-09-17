@@ -128,4 +128,7 @@ class Legend(QWidget):
 
     def on_new_data(self, data):
         for i, item in enumerate(self.legend_items):
+            # prevent index error when more input channels than output channels in DEBUG_MODE
+            if i >= len(CHANNEL_NAMES_OUT):
+                return
             item.set_current_rms(data[i])

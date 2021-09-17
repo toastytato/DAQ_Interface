@@ -35,7 +35,7 @@ class MainWindow(QtGui.QMainWindow):
                 writer=self.writer,
                 reader=self.writer,
                 write_channels=self.setting_param_tree.get_write_channels(),
-                read_channels=self.setting_param_tree.get_write_channels(),
+                read_channels=self.setting_param_tree.get_read_channels(),
                 saved_offsets=saved_offsets,
             )
             self.writer.incoming_data.connect(self.calibration_dialog.apply_calibration)

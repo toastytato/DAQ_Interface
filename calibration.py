@@ -55,7 +55,7 @@ class CalibrationWindow(QtGui.QMainWindow):
         self.handler_counter = 0
         self.offsets = saved_offsets
         # value represents the index of the output channel to take voltage readings from
-        self.assigned_output = [int for x in CHANNEL_NAMES_OUT]
+        self.assigned_output = [int for x in CHANNEL_NAMES_IN]
 
         self.init_ui()
         self.calibration_btn.clicked.connect(self.on_calibration_btn_clicked)
@@ -70,7 +70,7 @@ class CalibrationWindow(QtGui.QMainWindow):
         self.mainbox.setLayout(layout)
 
         grid_layout = QGridLayout(self)
-        self.output_channels_combo = [QComboBox(self) for i in CHANNEL_NAMES_IN]
+        self.sel_output_ch_combo = [QComboBox(self) for i in CHANNEL_NAMES_IN]
 
         grid_layout.addWidget(QLabel("Input Ch."), 0, 0)
         grid_layout.addWidget(QLabel("Output Ch."), 0, 1)
@@ -79,14 +79,14 @@ class CalibrationWindow(QtGui.QMainWindow):
         for i, ch_in in enumerate(CHANNEL_NAMES_IN):
             for j, ch_out in enumerate(CHANNEL_NAMES_OUT):
                 item = ch_out + " (ao" + str(self.write_channels[j]) + ")"
-                self.output_channels_combo[i].addItem(item, userData=i)
+                self.sel_output_ch_combo[i].addItem(item, userData=i)
             # set -1 to trigger event handler for all combo boxes on creation
-            self.output_channels_combo[i].setCurrentIndex(-1)
+            self.sel_output_ch_combo[i].setCurrentIndex(-1)
             # first argument of handler when connected is index of selection (indicated by _).
             # ignore so the selected combobox qt object can be passed instead
-            handler = lambda _, combo=self.output_channels_combo[i]: self.on_output_channel_selected(combo)
-            self.output_channels_combo[i].currentIndexChanged.connect(handler)
-            self.output_channels_combo[i].setCurrentIndex(i)
+            handler = lambda _, combo=self.sel_output_ch_combo[i]: self.on_output_channel_selected(combo)
+            self.sel_output_ch_combo[i].currentIndexChanged.connect(handler)
+            self.sel_output_ch_combo[i].setCurrentIndex(0)
 
             self.offsets_label = [
                 QLabel(str(self.offsets[i]) + "V")
@@ -95,7 +95,7 @@ class CalibrationWindow(QtGui.QMainWindow):
             grid_layout.addWidget(
                 QLabel(ch_in + " (ai" + str(self.read_channels[i]) + ")"), i + 1, 0
             )
-            grid_layout.addWidget(self.output_channels_combo[i], i + 1, 1)
+            grid_layout.addWidget(self.sel_output_ch_combo[i], i + 1, 1)
             grid_layout.addWidget(self.offsets_label[i], i + 1, 2)
             # make associations between daq input channel and the daq out channel it is receiving voltage from
 
@@ -113,8 +113,8 @@ class CalibrationWindow(QtGui.QMainWindow):
         layout.addWidget(QLabel(instructions))
         layout.addWidget(self.calibration_btn)
 
-    # index = index in CHANNEL_NAMES_IN that we are assigning to
     # combo = contains the info for the selected output DAQ we are reading from
+    # combo.currentData() = input channel that we are assigning to 
     def on_output_channel_selected(self, combo):
         self.assigned_output[combo.currentData()] = combo.currentIndex()
         print(self.assigned_output)
