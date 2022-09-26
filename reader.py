@@ -7,8 +7,13 @@ from pyqtgraph.Qt import QtCore
 
 from config import *
 
-# Thread for capturing input signal through DAQ
 class SignalReader(QtCore.QThread):
+    """
+    Captures signals on the input DAQ
+    Creates a new thread to constantly poll the buffer from the DAQ
+    """
+    
+    # signal that is emitted whenever buffer object has been filled and is ready
     incoming_data = QtCore.pyqtSignal(object)
 
     def __init__(self, sample_rate, sample_size, channels, dev_name="Dev2"):
@@ -25,9 +30,13 @@ class SignalReader(QtCore.QThread):
         # actual data received from the DAQ
         self.input = np.empty(shape=(len(CHANNEL_NAMES_IN), self.sample_size))
 
-
     # called on start()
     def run(self):
+        """
+        Main thread loop
+        Whenver the reader has data available and ready, it will emit the incoming_data signal with the data
+        """
+
         self.is_running = True
         self.create_task()
 
@@ -47,6 +56,9 @@ class SignalReader(QtCore.QThread):
         self.task.close()
 
     def create_task(self):
+        """
+        Create a read task
+        """
         print("reader input channels:", self.input_channels)
         try:
             self.task = nidaqmx.Task("Reader Task")
@@ -71,10 +83,14 @@ class SignalReader(QtCore.QThread):
         self.reader = AnalogMultiChannelReader(self.task.in_stream)
 
     def restart(self):
+        """
+        Deletes the previous task and creates a new task again
+        """
         self.is_paused = True
         self.task.close()
         self.create_task()
         self.is_paused = False
+
 
 if __name__ == "__main__":
     print("\nRunning demo for SignalReader\n")

@@ -1,6 +1,6 @@
 # DAQ_Interface
 
-GUI for controlling NI DAQ devices and monitoring output/input voltages in multiple channels
+GUI for controlling NI DAQ devices and monitoring output/input voltages in multiple channels. 
 
 ![Screenshot of software as of 5/17/2021](https://github.com/toastytato/DAQ_Interface/blob/master/examples/daq_channels.png?raw=true)
 
@@ -17,16 +17,15 @@ For newer machines, install Python 3.8.9 and the following modules:
 
 ```
 pip install nidaqmx
-pip install pyqt5==5.14.0
-pip install pyqtgraph
+pip install pyqt5
+pip install git+https://github.com/pyqtgraph/pyqtgraph@master
 ```
 
 Run pyqt_main.py and the interface should show up.
 
 ### Debug
 
-There are two states for the interface, debug or not. Use debug when the National Instruments DAQ device is not connected to the PC, and all signal generated will be simulated. This is to prevent the nidaqmx library from
-throwing errors. To set this, go into the config.py file and change the variable DEBUG_MODE to **True**. If DAQ is connected, change to **False**
+There are two states for the interface, debug or not. Use debug when the National Instruments DAQ device is not connected to the PC, and all signal generated will be simulated. This is to prevent the nidaqmx library from throwing errors. To set this, go into the config.py file and change the variable DEBUG_MODE to **True**. If DAQ is connected, change to **False**
 
 ## Usage
 
@@ -37,6 +36,7 @@ There is a graph/legend, master start/stop button, and a tab layout within the i
 This is where the device name, channel configurations, and sample rate/size is set for both input and output DAQs.
 
 - Device Name: Name assigned to the DAQ. By default the output DAQ is Dev1 and input DAQ is Dev2.
+  - I would recommend downloading the [NI MAX Software](https://www.ni.com/en-us/support/documentation/supplemental/21/what-is-ni-measurement---automation-explorer--ni-max--.html) which allows you to see which device has what device name. It is also the official software for controlling NI DAQ hardware.
 - Sample Rate: The number of samples per second both the writer and reader will write/read per second.
 - Sample Size: The number of samples the DAQ will write/read in each pass
 - X/Y/Z Output Channel: The channel with which the DAQs will read/write from for the corresponding name.

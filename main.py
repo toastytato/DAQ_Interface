@@ -11,7 +11,13 @@ from plotter import *
 from calibration import *
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QMainWindow):
+    """
+    Main application window
+    Handles creating the UI elements and acts as the controller logic for connecting user inputs to 
+    the desired action
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -38,7 +44,8 @@ class MainWindow(QtGui.QMainWindow):
                 read_channels=self.setting_param_tree.get_read_channels(),
                 saved_offsets=saved_offsets,
             )
-            self.writer.incoming_data.connect(self.calibration_dialog.apply_calibration)
+            self.writer.incoming_data.connect(
+                self.calibration_dialog.apply_calibration)
         # DAQ connected mode
         else:
             self.calibration_dialog = CalibrationWindow(
@@ -53,7 +60,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.calibration_dialog.apply_calibration
             )
 
-        self.calibration_dialog.corrected_data.connect(self.plotter.update_plot)
+        self.calibration_dialog.corrected_data.connect(
+            self.plotter.update_plot)
         self.calibration_dialog.corrected_data.connect(self.legend.on_new_data)
         self.calibration_dialog.offsets_received.connect(
             self.setting_param_tree.save_offsets
@@ -65,11 +73,15 @@ class MainWindow(QtGui.QMainWindow):
         self.save_settings_btn.clicked.connect(self.commit_settings_btn_click)
         self.tabs.currentChanged.connect(self.on_tab_change)
 
-        self.magnetic_param_tree.paramChange.connect(self.magnetic_param_change)
+        self.magnetic_param_tree.paramChange.connect(
+            self.magnetic_param_change)
         self.channel_param_tree.paramChange.connect(self.channels_param_change)
         self.setting_param_tree.paramChange.connect(self.settings_param_change)
 
     def init_ui(self):
+        """
+        Create the UI elements and arranges them on the application
+        """
         self.resize(700, 700)  # non maximized size
         # self.setWindowState(QtCore.Qt.WindowMinimized)
         # self.setMinimumSize(QSize(500, 400))
@@ -116,11 +128,19 @@ class MainWindow(QtGui.QMainWindow):
         layout.addWidget(self.tabs)
 
     def init_daq_io(self):
-        voltages = []
-        frequencies = []
-        shifts = []
-        output_states = []
+        """
+        Initialize Input and Output DAQs
 
+        Note: The self.writer object (SignalGenerator) will be instantiated once but passed to the 
+        magnetic controls so that they can use the same signal generator. This means that the magnetic
+        controls and individual controls all reference the same SignalGenerator object
+        """
+        voltages = []       # RMS Voltage
+        frequencies = []    # Frequency in Hz
+        shifts = []         # Phase shift in degrees
+        output_states = []  # Output on or off
+
+        # get param values from the UI widgets
         for ch in CHANNEL_NAMES_OUT:
             branch = "Output " + ch
             voltages.append(
@@ -133,16 +153,18 @@ class MainWindow(QtGui.QMainWindow):
                 self.channel_param_tree.get_param_value(branch, "Phase Shift")
             )
             output_states.append(
-                self.channel_param_tree.get_param_value(branch, "Toggle Output")
+                self.channel_param_tree.get_param_value(
+                    branch, "Toggle Output")
             )
 
+        # Update graph legend
         self.legend.update_rms_params(
             sample_rate=self.setting_param_tree.get_param_value(
                 "Reader Config", "Sample Rate"
             )
         )
 
-        # When NI instrument is attached
+        # When NI DAQ hardware is attached
         if not DEBUG_MODE:
             # initiate read threads for analog input
             self.read_thread = SignalReader(
@@ -204,8 +226,10 @@ class MainWindow(QtGui.QMainWindow):
             state=self.magnetic_param_tree.get_param_value(
                 "3D Alignment", "Toggle Output"
             ),
-            phi=self.magnetic_param_tree.get_param_value("3D Alignment", "Elevation"),
-            theta=self.magnetic_param_tree.get_param_value("3D Alignment", "Azimuth"),
+            phi=self.magnetic_param_tree.get_param_value(
+                "3D Alignment", "Elevation"),
+            theta=self.magnetic_param_tree.get_param_value(
+                "3D Alignment", "Azimuth"),
             amplitude=self.magnetic_param_tree.get_param_value(
                 "3D Alignment", "Amplitude"
             ),
@@ -227,8 +251,10 @@ class MainWindow(QtGui.QMainWindow):
             state=self.magnetic_param_tree.get_param_value(
                 "3D Rotation", "Toggle Output"
             ),
-            phi=self.magnetic_param_tree.get_param_value("3D Rotation", "Elevation"),
-            theta=self.magnetic_param_tree.get_param_value("3D Rotation", "Azimuth"),
+            phi=self.magnetic_param_tree.get_param_value(
+                "3D Rotation", "Elevation"),
+            theta=self.magnetic_param_tree.get_param_value(
+                "3D Rotation", "Azimuth"),
             amplitude=self.magnetic_param_tree.get_param_value(
                 "3D Rotation", "Amplitude"
             ),
@@ -248,6 +274,9 @@ class MainWindow(QtGui.QMainWindow):
 
     @pyqtSlot()
     def start_signal_btn_click(self):
+        """
+        Start or pause the signal generation process
+        """
         if self.writer.is_running:
             print("Stopped DAQ signal")
             self.writer.pause()
@@ -268,6 +297,9 @@ class MainWindow(QtGui.QMainWindow):
 
     @pyqtSlot()
     def commit_settings_btn_click(self):
+        """
+        All the values in the settings tab will be committed to the NI hardware at once
+        """
         print("Commit settings btn pressed")
 
         writer_sample_rate = self.setting_param_tree.get_param_value(
@@ -283,7 +315,8 @@ class MainWindow(QtGui.QMainWindow):
             "Reader Config", "Sample Size"
         )
         # update read channel names
-        self.legend.update_channels(self.setting_param_tree.get_read_channels())
+        self.legend.update_channels(
+            self.setting_param_tree.get_read_channels())
         self.legend.update_rms_params(sample_rate=writer_sample_rate)
 
         if not DEBUG_MODE:
@@ -312,6 +345,19 @@ class MainWindow(QtGui.QMainWindow):
 
     @pyqtSlot(int)
     def on_tab_change(self, t):
+        """
+        Handles logic on tab switches
+        When switch to tab 1 (Magnetic Controls Tab):
+        - Realign the phase shift that may have been changed from the previous controls
+        - Set the writer output to the values stored in the MagneticControls object with update_params()
+        When switch to tab 2 (Individual Controls Tab):
+        - Realign the phase shift that may have been changed from the previous controls
+        - Set individual channel outputs to that stored in the channel params
+        When switch to tab 3 (Settings Tab):
+        - Do nothing for right now
+
+        :param t: the tab index
+        """
         print("changed to tab: ", t)
         self.current_tab = t
         if t == 0:
@@ -324,16 +370,23 @@ class MainWindow(QtGui.QMainWindow):
             self.writer.realign_channel_phases()
             for i, ch in enumerate(CHANNEL_NAMES_OUT):
                 parent = self.channel_param_tree.params.child("Output " + ch)
-                self.writer.output_states[i] = parent.child("Toggle Output").value()
+                self.writer.output_states[i] = parent.child(
+                    "Toggle Output").value()
                 self.writer.voltages[i] = parent.child("Voltage RMS").value()
                 self.writer.frequencies[i] = parent.child("Frequency").value()
                 self.writer.shifts[i] = parent.child("Phase Shift").value()
         elif t == 2:
             pass
 
-    # TODO: 3D alignment will be changed to 3D Rotation when 
+    # TODO: 3D alignment will be changed to 3D Rotation when
     #       3D rotation param is changed, and vice versa
     def magnetic_param_change(self, parameter, changes):
+        """
+        Handles the actions whenever some param in the Magnetic Controls Tab has changed or is updated
+        
+        :param parameter: the GroupParameter object that holds the Channel Params
+        :param changes: list that contains [ParameterObject, 'value', data]
+        """
         for param, change, data in changes:
 
             path = self.magnetic_param_tree.params.childPath(param)
@@ -397,8 +450,13 @@ class MainWindow(QtGui.QMainWindow):
                     self.mag_rotation.update_params()
 
     def channels_param_change(self, parameter, changes):
-        # parameter: the GroupParameter object that holds the Channel Params
-        # changes: list that contains [ParameterObject, 'value', data]
+        """
+        Handles the actions whenever some param in the Individual Controls Tab has changed or is updated
+
+        :param parameter: the GroupParameter object that holds the Channel Params
+        :param changes: list that contains [ParameterObject, 'value', data]
+        """
+
         for param, change, data in changes:
 
             path = self.channel_param_tree.params.childPath(param)
@@ -415,9 +473,19 @@ class MainWindow(QtGui.QMainWindow):
                 self.writer.shifts[ch] = data
 
     def settings_param_change(self, parameter, changes):
+        """
+        Handles the actions whenever some param in the Settings Tab has changed or is updated
+        Currently there is no need because the settings should only be applied when the "Commit Settings" button is pressed
+        
+        :param parameter: the GroupParameter object that holds the Channel Params
+        :param changes: list that contains [ParameterObject, 'value', data]
+        """
         pass
 
     def closeEvent(self, event):
+        """
+        When the application is closed
+        """
         print("Closing...")
         if not DEBUG_MODE:
             self.read_thread.is_running = False

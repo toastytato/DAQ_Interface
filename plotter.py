@@ -11,6 +11,10 @@ from misc_functions import calculate_rms_value
 
 # Graph Widget
 class SignalPlot(pg.PlotWidget):
+    """
+    Inherits plot widget in order to plot voltage values
+    """
+
     def __init__(self, legend=None):
         super().__init__()
         # PlotWidget super functions
@@ -30,9 +34,15 @@ class SignalPlot(pg.PlotWidget):
         self.setLabel("bottom", "Samples")
     
     def on_offsets_received(self, data):
+        """
+        Holds calibration offset state values here
+        """
         self.offsets = data
 
     def update_plot(self, incoming_data):
+        """
+        Refresh plot widget to display incoming_data array values
+        """
         self.clear()
 
         # adds each channel's offset to incoming channel
@@ -41,8 +51,14 @@ class SignalPlot(pg.PlotWidget):
             if self.legend.legend_items[i].toggle_box.isChecked():
                 self.plot(data, clear=False, pen=self.pens[i])
 
+#***
 
 class LegendItem(QWidget):
+    """"
+    Individual widget item for a single plot
+    - Allows for toggling visualization on and off
+    - Displays current values for said channel
+    """
     def __init__(self, color, name, channel):
         super().__init__()
         self.curve_label = QLabel()
@@ -100,6 +116,9 @@ class LegendItem(QWidget):
 
 
 class Legend(QWidget):
+    """
+    Holds multiple legend items and combines them into a single widget
+    """
     def __init__(self, channels):
         super().__init__()
 

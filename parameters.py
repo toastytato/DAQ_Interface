@@ -8,6 +8,8 @@ from config import *
 
 
 class ParamTreeBase(ParameterTree):
+
+    
     # ParamTree will output a signal that has the param and the output
     paramChange = QtCore.pyqtSignal(object, object)
 
@@ -113,7 +115,7 @@ class ConfigParamTree(ParamTreeBase):
                     {
                         "name": "Device Name",
                         "type": "str",
-                        "value": "Dev1",
+                        "value": "Dev2",
                     },
                     {
                         "name": "Sample Rate",
@@ -134,7 +136,7 @@ class ConfigParamTree(ParamTreeBase):
                     {
                         "name": "Device Name",
                         "type": "str",
-                        "value": "Dev2",
+                        "value": "Dev1",
                     },
                     {
                         "name": "Sample Rate",
